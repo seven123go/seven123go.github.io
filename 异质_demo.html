@@ -1,0 +1,4448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>异质 · 可玩 Demo</title>
+<style>
+/* ============================================================
+   《异质》可玩 Demo
+   单文件 / 无外部资源 / 数据与内容均在文件底部 JS 中
+   ------------------------------------------------------------
+   调参入口：搜索 CFG
+   内容入口：搜索 EVENTS / FAMILIAR_DEFS / BATTLES
+   ============================================================ */
+
+:root{
+  --bg:#090b0c;
+  --bg2:#0d1012;
+  --panel:#111416;
+  --panel-2:#15191b;
+  --panel-3:#1b2022;
+  --ink:#ddd6c7;
+  --ink-dim:#aaa79f;
+  --muted:#777b78;
+  --line:#2b3031;
+  --line-soft:#202526;
+  --red:#b94f43;
+  --red-dim:#713a35;
+  --teal:#73a89d;
+  --teal-dim:#335c56;
+  --gold:#c4a35f;
+  --gold-dim:#6e5c37;
+  --violet:#9584b2;
+  --paper:#d9d0bd;
+  --shadow:0 18px 50px rgba(0,0,0,.35);
+  --serif:"Source Han Serif SC","Noto Serif CJK SC","Songti SC","STSong","SimSun",serif;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"Cascadia Mono","SFMono-Regular","Consolas",monospace;
+}
+
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{
+  margin:0;
+  min-height:100dvh;
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 70% -10%, rgba(115,168,157,.08), transparent 60%),
+    radial-gradient(900px 500px at 5% 110%, rgba(185,79,67,.07), transparent 60%),
+    var(--bg);
+  font-family:var(--sans);
+  font-size:14px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.22;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.012) 3px 4px),
+    repeating-linear-gradient(90deg, transparent 0 7px, rgba(255,255,255,.008) 7px 8px);
+  mix-blend-mode:screen;
+}
+::selection{background:var(--red); color:#fff}
+button,input,select{font:inherit}
+button{color:inherit}
+a{color:var(--teal)}
+.hidden{display:none !important}
+.mono{font-family:var(--mono)}
+.serif{font-family:var(--serif)}
+.muted{color:var(--muted)}
+.dim{color:var(--ink-dim)}
+.small{font-size:12px}
+.tiny{font-size:11px}
+.nowrap{white-space:nowrap}
+.gold{color:var(--gold)}
+.teal{color:var(--teal)}
+.red{color:var(--red)}
+.violet{color:var(--violet)}
+.center{text-align:center}
+hr.sep{border:0;border-top:1px solid var(--line-soft);margin:16px 0}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2c3233;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:#3a4243}
+
+/* ---------- 开始界面 ---------- */
+#start-screen{
+  min-height:100dvh;
+  display:grid; place-items:center;
+  padding:34px 22px;
+  position:relative;
+  overflow:hidden;
+}
+#start-screen::before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    linear-gradient(90deg, transparent 49.9%, rgba(196,163,95,.11) 50%, transparent 50.1%),
+    linear-gradient(0deg, transparent 49.9%, rgba(196,163,95,.07) 50%, transparent 50.1%);
+  background-size:120px 120px;
+  mask-image:radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+  pointer-events:none;
+}
+#start-screen::after{
+  content:"";
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at 50% 35%, transparent 0 35%, rgba(0,0,0,.55) 78%, #050607 100%);
+  pointer-events:none;
+}
+.start-card{
+  position:relative; z-index:2;
+  width:min(880px,100%);
+  padding:44px 48px 36px;
+  border:1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(21,25,27,.93), rgba(10,13,14,.96)),
+    var(--panel);
+  box-shadow:var(--shadow);
+}
+.start-card::before,.start-card::after{
+  content:""; position:absolute; width:18px; height:18px; border-color:var(--gold);
+  opacity:.7;
+}
+.start-card::before{left:-1px;top:-1px;border-left:1px solid;border-top:1px solid}
+.start-card::after{right:-1px;bottom:-1px;border-right:1px solid;border-bottom:1px solid}
+.kicker{
+  display:flex; align-items:center; gap:12px;
+  color:var(--muted); font-size:11px; letter-spacing:.3em; text-transform:uppercase;
+}
+.kicker::before{content:"";width:44px;height:1px;background:var(--gold);opacity:.65}
+.title-block{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap;margin:14px 0 6px}
+.title-cn{
+  font-family:var(--serif);
+  font-size:clamp(64px,11vw,118px);
+  line-height:.92;
+  letter-spacing:.16em;
+  margin:0 0 0 -.05em;
+  font-weight:600;
+  color:#e6dfd1;
+  text-shadow:1px 0 rgba(185,79,67,.35), -1px 0 rgba(115,168,157,.25);
+  position:relative;
+}
+.title-en{
+  font-family:var(--mono);
+  font-size:10px;letter-spacing:.42em;color:var(--muted);
+  padding-bottom:13px;
+}
+.start-sub{
+  font-family:var(--serif);font-size:18px;color:var(--ink-dim);
+  margin:8px 0 24px;letter-spacing:.06em;
+}
+.start-lore{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--line-soft);border:1px solid var(--line-soft);
+  margin:22px 0 26px;
+}
+.lore-cell{background:#0f1213;padding:16px 18px}
+.lore-cell b{display:block;color:var(--ink);font-size:13px;font-weight:500;margin-bottom:5px;letter-spacing:.08em}
+.lore-cell p{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
+.start-form{display:flex;gap:12px;align-items:stretch;max-width:520px}
+.name-field{flex:1;position:relative}
+.name-field label{
+  position:absolute;left:14px;top:7px;font-size:10px;letter-spacing:.24em;color:var(--muted);
+}
+.name-field input{
+  width:100%;padding:25px 14px 8px;border:1px solid var(--line);
+  background:#0b0e0f;color:var(--ink);outline:none;border-radius:0;
+  font-family:var(--serif);font-size:18px;letter-spacing:.08em;
+}
+.name-field input:focus{border-color:var(--gold-dim);box-shadow:0 0 0 1px rgba(196,163,95,.16) inset}
+.btn{
+  border:1px solid var(--line);
+  background:var(--panel-2);
+  padding:10px 16px;
+  cursor:pointer;
+  transition:background .16s,border-color .16s,color .16s,transform .16s;
+  letter-spacing:.05em;
+  text-align:left;
+}
+.btn:hover{border-color:#485152;background:var(--panel-3)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{
+  background:linear-gradient(180deg,#9c463c,#7b3831);
+  border-color:#c06455;color:#fff3e9;
+}
+.btn.primary:hover{background:linear-gradient(180deg,#b95447,#8c4037)}
+.btn.ghost{background:transparent}
+.btn.gold{border-color:var(--gold-dim);color:var(--gold)}
+.btn.teal{border-color:var(--teal-dim);color:var(--teal)}
+.btn.danger{border-color:var(--red-dim);color:#e49a8f}
+.btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
+.btn.wide{width:100%}
+.start-actions{display:flex;flex-direction:column;gap:8px;min-width:180px}
+.start-actions .btn{height:100%;text-align:center;display:flex;align-items:center;justify-content:center}
+.start-foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:22px;color:var(--muted);font-size:11px}
+.start-foot span{letter-spacing:.06em}
+.endings-count{color:var(--gold)}
+
+/* ---------- 游戏框架 ---------- */
+#game-screen{
+  height:100dvh; min-height:640px;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+.topbar{
+  flex:0 0 auto;
+  display:flex;align-items:center;gap:18px;
+  padding:10px 18px;
+  border-bottom:1px solid var(--line);
+  background:rgba(10,13,14,.92);
+  backdrop-filter:blur(10px);
+  position:relative;z-index:20;
+}
+.brand{
+  display:flex;align-items:baseline;gap:9px;
+  font-family:var(--serif);font-size:23px;letter-spacing:.22em;white-space:nowrap;
+}
+.brand small{font-family:var(--mono);font-size:8px;letter-spacing:.22em;color:var(--muted)}
+.top-stats{display:flex;gap:8px;flex:1;min-width:0;overflow:hidden}
+.stat{
+  min-width:0;padding:5px 11px 4px;
+  border-left:1px solid var(--line);
+  line-height:1.35;
+}
+.stat-label{font-size:9px;letter-spacing:.2em;color:var(--muted);white-space:nowrap}
+.stat-value{font-family:var(--mono);font-size:13px;color:var(--ink);white-space:nowrap}
+.stat-sub{font-size:9px;color:var(--muted);white-space:nowrap;margin-top:1px}
+.stat.life .stat-value{color:#d9b2a9}
+.stat.assets .stat-value{color:var(--teal)}
+.stat.turn .stat-value{color:var(--gold)}
+.stat.precision .stat-value{font-size:11px}
+.top-tools{display:flex;gap:7px;align-items:center;flex:0 0 auto}
+.icon-btn{
+  border:1px solid var(--line);background:transparent;color:var(--ink-dim);
+  padding:6px 10px;font-size:11px;cursor:pointer;letter-spacing:.08em;
+}
+.icon-btn:hover{border-color:#4a5354;color:var(--ink)}
+.game-body{
+  flex:1;min-height:0;
+  display:grid;grid-template-columns:282px minmax(0,1fr) 292px;
+}
+.rail{
+  min-height:0;overflow-y:auto;
+  background:linear-gradient(180deg, rgba(17,20,22,.62), rgba(9,11,12,.5));
+  padding:14px;
+}
+.rail.left{border-right:1px solid var(--line)}
+.rail.right{border-left:1px solid var(--line)}
+#stage{
+  min-width:0;min-height:0;overflow-y:auto;
+  padding:28px 34px 56px;
+  position:relative;
+}
+.panel{
+  border:1px solid var(--line-soft);
+  background:rgba(18,22,24,.55);
+  margin-bottom:12px;
+}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 12px;border-bottom:1px solid var(--line-soft);
+}
+.panel-title{
+  font-size:10px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;
+  display:flex;align-items:center;gap:7px;margin:0;
+}
+.panel-title::before{content:"";width:3px;height:10px;background:var(--gold-dim)}
+.panel-body{padding:11px 12px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:3px 0;font-size:12px}
+.kv .k{color:var(--muted);white-space:nowrap}
+.kv .v{font-family:var(--mono);text-align:right;color:var(--ink-dim)}
+.meter{
+  height:5px;background:#202526;overflow:hidden;position:relative;
+  border-radius:1px;
+}
+.meter > i{display:block;height:100%;background:var(--teal);transition:width .3s ease}
+.meter.gold > i{background:var(--gold)}
+.meter.red > i{background:var(--red)}
+.meter-row{display:flex;align-items:center;gap:8px}
+.meter-row .meter{flex:1}
+
+/* 眷属卡 */
+.fam-card{
+  border:1px solid var(--line-soft);
+  background:linear-gradient(180deg,rgba(23,28,30,.78),rgba(13,16,17,.72));
+  padding:10px 11px;margin-bottom:9px;position:relative;
+}
+.fam-card::before{
+  content:"";position:absolute;left:-1px;top:9px;bottom:9px;width:2px;background:var(--fam-color,var(--teal));
+}
+.fam-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.fam-name{font-family:var(--serif);font-size:17px;letter-spacing:.08em;line-height:1.2}
+.fam-id{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:.1em}
+.fam-form{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.4}
+.fam-status{
+  font-size:9px;border:1px solid var(--line);padding:1px 5px;white-space:nowrap;
+  color:var(--muted);letter-spacing:.08em;
+}
+.fam-status.normal{color:var(--teal);border-color:var(--teal-dim)}
+.fam-status.weak{color:var(--gold);border-color:var(--gold-dim)}
+.fam-status.berserk{color:#f09a8c;border-color:var(--red)}
+.fam-status.broken{color:#777;border-color:#333;text-decoration:line-through}
+.fam-meta{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:7px}
+.fam-meta b{font-family:var(--mono);color:var(--ink-dim);font-weight:400}
+.fam-actions{display:flex;gap:6px;margin-top:8px}
+.mini-btn{
+  flex:1;border:1px solid var(--line-soft);background:transparent;color:var(--muted);
+  font-size:10px;padding:5px 4px;cursor:pointer;letter-spacing:.04em;
+}
+.mini-btn:hover{color:var(--ink);border-color:#475051}
+.empty-note{
+  border:1px dashed var(--line);padding:16px 12px;color:var(--muted);
+  font-size:11px;text-align:center;line-height:1.7;
+}
+
+/* 空白契约 */
+.contract-strip{
+  border-left:2px solid var(--violet);
+  padding:8px 9px;background:rgba(149,132,178,.055);
+}
+.contract-title{font-family:var(--serif);font-size:14px;letter-spacing:.12em;color:#c7bbd9}
+.contract-meta{font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.7;margin-top:3px}
+.countdown{color:var(--red);letter-spacing:.08em}
+.ability-row{display:flex;gap:6px;margin-top:8px}
+.ability-row .btn{flex:1;font-size:10px;padding:6px 8px;text-align:center}
+
+/* 事件日志 */
+.log-list{display:flex;flex-direction:column;gap:10px}
+.log-item{
+  font-size:11px;line-height:1.6;color:var(--ink-dim);
+  padding-left:10px;border-left:1px solid #303637;position:relative;
+}
+.log-item::before{content:"";position:absolute;left:-2px;top:7px;width:3px;height:3px;background:#4a5253;border-radius:50%}
+.log-item .day{font-family:var(--mono);color:var(--muted);font-size:9px;margin-right:5px}
+.log-item.gain{color:#a8c8c0}
+.log-item.loss{color:#d8a39b}
+.log-item.story{color:#cfc5b0}
+.log-empty{font-size:11px;color:var(--muted);padding:2px 0}
+
+/* ---------- 主舞台：场景 / 事件 ---------- */
+.scene{max-width:860px;margin:0 auto;animation:fadeUp .32s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.scene-top{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:17px;
+}
+.scene-loc{font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase}
+.scene-type{font-size:9px;letter-spacing:.2em;color:var(--gold);border:1px solid var(--gold-dim);padding:2px 7px;white-space:nowrap}
+.scene-title{
+  font-family:var(--serif);font-size:clamp(26px,3.2vw,40px);font-weight:500;
+  line-height:1.32;letter-spacing:.05em;margin:0 0 18px;color:#e6dfd1;
+}
+.scene-body{font-family:var(--serif);font-size:15px;line-height:2.02;color:#c8c2b5}
+.scene-body p{margin:0 0 13px}
+.scene-body .quote{
+  margin:16px 0;padding:12px 16px;border-left:2px solid var(--gold-dim);
+  background:rgba(196,163,95,.045);color:#d2c7af;font-size:14px;
+}
+.scene-body .quote .speaker{
+  display:block;font-family:var(--sans);font-size:9px;letter-spacing:.22em;color:var(--gold);margin-bottom:4px;
+}
+.scene-body em{font-style:normal;color:#e0b2a8}
+.scene-body strong{font-weight:500;color:#eee5d3}
+.dossier{
+  border:1px solid var(--line);background:rgba(13,16,17,.78);
+  margin:20px 0;padding:13px 15px;font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--ink-dim);
+}
+.dossier .row{display:flex;justify-content:space-between;gap:15px;border-bottom:1px dotted #2d3334;padding:2px 0}
+.dossier .row:last-child{border-bottom:0}
+.dossier .row b{font-weight:400;color:var(--ink)}
+.dossier .warn{color:var(--red)}
+.choices{display:flex;flex-direction:column;gap:8px;margin-top:24px}
+.choice{
+  position:relative;width:100%;text-align:left;
+  border:1px solid var(--line);background:rgba(20,24,26,.66);
+  padding:12px 42px 11px 15px;cursor:pointer;
+  transition:background .16s,border-color .16s,transform .16s;
+}
+.choice::after{
+  content:"→";position:absolute;right:15px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-family:var(--mono);font-size:12px;transition:color .16s,transform .16s;
+}
+.choice:hover{border-color:#4b5455;background:rgba(27,32,34,.88);transform:translateX(2px)}
+.choice:hover::after{color:var(--gold);transform:translate(3px,-50%)}
+.choice .choice-main{display:block;font-size:13px;color:#d9d2c4;line-height:1.55}
+.choice .choice-hint{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.6}
+.choice.danger{border-color:var(--red-dim)}
+.choice.danger:hover{border-color:var(--red)}
+.choice.gold{border-color:var(--gold-dim)}
+.choice.gold:hover{border-color:var(--gold)}
+.choice.teal{border-color:var(--teal-dim)}
+.choice.teal:hover{border-color:var(--teal)}
+.choice:disabled,.choice.disabled{cursor:not-allowed;opacity:.38;transform:none}
+.choice:disabled::after,.choice.disabled::after{content:"×";color:var(--muted)}
+.choice:disabled:hover,.choice.disabled:hover{border-color:var(--line);background:rgba(20,24,26,.66)}
+.choice .choice-tag{
+  display:inline-block;font-family:var(--mono);font-size:8px;letter-spacing:.1em;
+  border:1px solid #3a4243;padding:1px 4px;margin-right:5px;color:var(--muted);vertical-align:1px;
+}
+.scene-foot{
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  margin-top:28px;padding-top:12px;border-top:1px solid var(--line-soft);
+  font-size:10px;color:var(--muted);letter-spacing:.04em;
+}
+
+/* ---------- 中枢 / 今日事项 ---------- */
+.hub-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.hub-date{font-family:var(--mono);font-size:10px;letter-spacing:.26em;color:var(--gold)}
+.hub-title{font-family:var(--serif);font-size:clamp(28px,3.4vw,44px);font-weight:500;line-height:1.25;margin:6px 0 10px}
+.hub-quote{font-family:var(--serif);color:var(--ink-dim);font-size:14px;line-height:1.9;max-width:680px}
+.ap-block{
+  border:1px solid var(--line);padding:9px 13px;min-width:120px;text-align:right;background:rgba(13,16,17,.6)
+}
+.ap-block b{display:block;font-family:var(--mono);font-size:22px;font-weight:400;color:var(--teal);line-height:1.2}
+.ap-block span{font-size:9px;letter-spacing:.18em;color:var(--muted)}
+.hub-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:10px;margin-top:24px}
+.hub-card{
+  position:relative;border:1px solid var(--line-soft);background:rgba(18,22,24,.58);
+  padding:15px 16px;cursor:pointer;text-align:left;min-height:112px;
+  transition:border-color .16s,background .16s,transform .16s;
+}
+.hub-card:hover{border-color:#4b5455;background:rgba(25,30,32,.8);transform:translateY(-1px)}
+.hub-card.story{grid-column:1/-1;border-color:var(--gold-dim);background:linear-gradient(100deg,rgba(196,163,95,.075),rgba(18,22,24,.5) 60%)}
+.hub-card.story:hover{border-color:var(--gold)}
+.hub-card.final{border-color:var(--red);background:linear-gradient(100deg,rgba(185,79,67,.13),rgba(18,22,24,.5) 60%)}
+.hub-card .card-kicker{font-family:var(--mono);font-size:8px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+.hub-card.story .card-kicker{color:var(--gold)}
+.hub-card.final .card-kicker{color:#e09a8e}
+.hub-card h3{font-family:var(--serif);font-size:19px;font-weight:500;letter-spacing:.04em;margin:5px 0 6px;color:#e2dbcc}
+.hub-card p{font-size:11px;color:var(--muted);line-height:1.65;margin:0}
+.hub-card .card-foot{display:flex;justify-content:space-between;gap:10px;margin-top:11px;font-family:var(--mono);font-size:9px;color:var(--muted)}
+.hub-card .card-foot .go{color:var(--gold)}
+.hub-card:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.hub-sublead{
+  display:flex;align-items:center;gap:9px;margin:26px 0 9px;
+  font-size:9px;letter-spacing:.22em;color:var(--muted);
+}
+.hub-sublead::after{content:"";height:1px;flex:1;background:var(--line-soft)}
+.hub-footer{
+  display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;
+  border-top:1px solid var(--line-soft);margin-top:24px;padding-top:14px;
+}
+.day-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 结果页 */
+.outcome{padding:8vh 0 40px;max-width:700px;margin:0 auto;animation:fadeUp .3s ease both}
+.outcome-stamp{
+  display:inline-block;border:1px solid var(--red);color:var(--red);
+  padding:4px 10px;font-family:var(--mono);font-size:9px;letter-spacing:.24em;transform:rotate(-1.2deg);
+}
+.outcome h1{font-family:var(--serif);font-size:clamp(30px,4vw,48px);font-weight:500;margin:18px 0 20px;line-height:1.3}
+.outcome-body{font-family:var(--serif);font-size:15px;line-height:2;color:#c9c3b6}
+.outcome-body p{margin:0 0 13px}
+.outcome-body .quote{border-left:2px solid var(--gold-dim);padding:9px 14px;color:#d4c9b3;background:rgba(196,163,95,.045);margin:14px 0}
+.outcome-actions{margin-top:28px;display:flex;gap:8px;flex-wrap:wrap}
+.stat-delta{font-family:var(--mono);font-size:11px;color:var(--teal)}
+
+/* ---------- 战斗 ---------- */
+.battle{max-width:960px;margin:0 auto;animation:fadeUp .25s ease both}
+.battle-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.battle-title{font-family:var(--serif);font-size:24px;letter-spacing:.08em}
+.battle-round{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:.14em}
+.enemy-zone{
+  border:1px solid var(--line);background:
+    linear-gradient(180deg,rgba(38,25,24,.42),rgba(13,16,17,.8)),
+    var(--panel);
+  padding:15px 17px;position:relative;overflow:hidden;
+}
+.enemy-zone::before{
+  content:"";position:absolute;right:-30px;top:-40px;width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(circle,rgba(185,79,67,.13),transparent 68%);
+  pointer-events:none;
+}
+.enemy-top{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;position:relative}
+.enemy-name{font-family:var(--serif);font-size:25px;letter-spacing:.09em;color:#e1c9c3;line-height:1.25}
+.enemy-desc{font-size:10px;color:var(--muted);margin-top:3px;max-width:520px;line-height:1.6}
+.enemy-hp{font-family:var(--mono);font-size:11px;color:#d5aaa1;white-space:nowrap}
+.enemy-intent{
+  margin-top:11px;display:flex;justify-content:space-between;gap:12px;align-items:center;
+  border-top:1px solid #322827;padding-top:9px;font-size:11px;color:#c7a59e;
+}
+.intent-badge{border:1px solid var(--red-dim);padding:2px 7px;font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:#e79e91}
+.battle-mid{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin:10px 0;
+}
+.player-zone{border:1px solid var(--line-soft);padding:9px 12px;background:rgba(16,20,21,.6)}
+.player-zone .name{font-size:11px;letter-spacing:.12em;color:var(--ink-dim)}
+.battle-stats{display:flex;gap:14px;margin-top:4px;font-family:var(--mono);font-size:10px;color:var(--muted);flex-wrap:wrap}
+.battle-stats b{font-weight:400;color:var(--ink)}
+.energy-orbs{display:flex;gap:4px}
+.energy-orbs i{width:10px;height:10px;border:1px solid var(--teal);display:block;transform:rotate(45deg)}
+.energy-orbs i.full{background:var(--teal)}
+.vs{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.18em}
+.capture-alert{
+  border:1px solid var(--red);background:rgba(185,79,67,.09);
+  padding:10px 13px;margin:10px 0;animation:pulseRed 2.2s infinite;
+}
+@keyframes pulseRed{0%,100%{box-shadow:0 0 0 0 rgba(185,79,67,0)}50%{box-shadow:0 0 0 3px rgba(185,79,67,.1)}}
+.capture-top{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#e3b1a8}
+.capture-bar{height:4px;background:#342625;margin-top:7px;overflow:hidden}
+.capture-bar i{display:block;height:100%;background:var(--red);transition:width .3s}
+.rewrite-band{
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
+  border:1px dashed var(--violet);background:rgba(149,132,178,.07);
+  padding:7px 11px;margin:9px 0;font-size:10px;color:#bcb1d0;
+}
+.hand-head{display:flex;justify-content:space-between;align-items:center;margin:15px 0 8px}
+.hand-head .hint{font-size:10px;color:var(--muted)}
+.hand{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;min-height:150px}
+.bcard{
+  position:relative;border:1px solid var(--line);background:linear-gradient(160deg,#1a1f21,#0e1112);
+  min-height:158px;padding:11px 11px 9px;text-align:left;cursor:pointer;overflow:hidden;
+  transition:transform .16s,border-color .16s,box-shadow .16s;
+  display:flex;flex-direction:column;
+}
+.bcard::before{
+  content:"";position:absolute;inset:0 auto 0 0;width:2px;
+  background:var(--card-color,var(--muted));opacity:.8;
+}
+.bcard:hover:not(:disabled){transform:translateY(-3px);border-color:var(--card-color,#666);box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.bcard:disabled{opacity:.38;cursor:not-allowed}
+.bcard .bc-top{display:flex;justify-content:space-between;gap:7px;align-items:flex-start}
+.bcard .bc-name{font-family:var(--serif);font-size:16px;line-height:1.3;color:#e4ddcf;letter-spacing:.04em}
+.bcard .bc-src{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:.08em;margin-top:2px}
+.bcard .bc-energy{
+  font-family:var(--mono);font-size:9px;color:var(--teal);border:1px solid var(--teal-dim);
+  padding:1px 4px;white-space:nowrap;
+}
+.bcard .bc-desc{font-size:10px;line-height:1.6;color:var(--muted);margin-top:8px;flex:1}
+.bcard .bc-foot{
+  display:flex;justify-content:space-between;gap:8px;align-items:flex-end;
+  border-top:1px solid #272d2e;padding-top:6px;margin-top:7px;
+  font-family:var(--mono);font-size:9px;color:var(--muted);
+}
+.bcard .bc-burst{color:#d9a69b}
+.bcard .bc-dmg{color:#e2cbc5;font-size:12px}
+.bcard.general{--card-color:#6f7879}
+.bcard.yan{--card-color:var(--teal)}
+.bcard.wu{--card-color:#b4685d}
+.bcard.heng{--card-color:var(--gold)}
+.battle-controls{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.battle-controls .left{display:flex;gap:7px;flex-wrap:wrap}
+.battle-log{
+  margin-top:14px;border-top:1px solid var(--line-soft);padding-top:9px;
+  display:flex;flex-direction:column;gap:4px;max-height:118px;overflow:auto;
+}
+.battle-log div{font-family:var(--mono);font-size:9px;line-height:1.6;color:var(--muted)}
+.battle-log div:last-child{color:var(--ink-dim)}
+.battle-log .hit{color:#dda49a}
+.battle-log .good{color:#9ac4b9}
+.battle-log .sys{color:#9a8eb1}
+.battle-help{
+  font-size:10px;color:var(--muted);border:1px dashed var(--line);
+  padding:7px 10px;margin:8px 0 0;line-height:1.7;
+}
+.status-pill{font-family:var(--mono);font-size:8px;border:1px solid var(--line);padding:1px 4px;color:var(--muted)}
+.status-pill.block{color:var(--teal);border-color:var(--teal-dim)}
+.status-pill.stun{color:var(--gold);border-color:var(--gold-dim)}
+.status-pill.weak{color:#d0a77a;border-color:#6d5737}
+
+/* ---------- 结局 ---------- */
+.ending-screen{
+  min-height:100%;display:grid;place-items:center;padding:40px 0;
+}
+.ending-card{
+  width:min(820px,100%);border:1px solid var(--line);background:rgba(12,15,16,.86);
+  padding:36px 40px;position:relative;
+}
+.ending-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ending-color,var(--gold))}
+.ending-kicker{font-family:var(--mono);font-size:9px;letter-spacing:.28em;color:var(--muted)}
+.ending-title{font-family:var(--serif);font-size:clamp(34px,5vw,62px);font-weight:500;line-height:1.25;margin:12px 0 8px;color:#e8e0d1}
+.ending-sub{font-family:var(--serif);font-size:15px;color:var(--ink-dim);letter-spacing:.1em;margin-bottom:22px}
+.ending-body{font-family:var(--serif);font-size:15px;line-height:2.05;color:#c8c2b5}
+.ending-body p{margin:0 0 14px}
+.ending-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);margin:24px 0}
+.ending-summary div{background:#0f1213;padding:10px 12px}
+.ending-summary span{display:block;font-size:9px;letter-spacing:.14em;color:var(--muted)}
+.ending-summary b{display:block;font-family:var(--mono);font-size:13px;font-weight:400;color:var(--ink);margin-top:2px}
+.ending-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px}
+.ending-collection{margin-top:16px;font-size:10px;color:var(--muted);line-height:1.9}
+.ending-collection .got{color:var(--gold)}
+
+/* ---------- 弹窗 ---------- */
+#modal-backdrop{
+  position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:22px;
+  background:rgba(3,5,6,.78);backdrop-filter:blur(5px);animation:fadeIn .18s ease;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  width:min(680px,100%);max-height:88dvh;overflow-y:auto;
+  border:1px solid #3a4243;background:
+    linear-gradient(180deg,rgba(24,29,31,.98),rgba(11,14,15,.99));
+  box-shadow:0 30px 90px rgba(0,0,0,.6);padding:24px 26px;animation:fadeUp .22s ease both;
+}
+.modal.wide{width:min(820px,100%)}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:15px}
+.modal-title{font-family:var(--serif);font-size:24px;letter-spacing:.06em;margin:0;color:#e4ddcf}
+.modal-kicker{font-family:var(--mono);font-size:8px;letter-spacing:.2em;color:var(--gold);margin-bottom:3px}
+.modal-close{border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;padding:3px 8px;font-size:12px}
+.modal-close:hover{color:var(--ink);border-color:#4d5657}
+.modal-body{font-size:12px;line-height:1.8;color:var(--ink-dim)}
+.modal-body p{margin:0 0 10px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px;border-top:1px solid var(--line-soft);padding-top:13px}
+.sign-terms{border:1px solid var(--line-soft);background:#0d1011;padding:11px 13px;margin:11px 0}
+.sign-row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px dotted #2b3132;font-family:var(--mono);font-size:11px}
+.sign-row:last-child{border-bottom:0}
+.sign-row b{font-weight:400;color:var(--ink)}
+.sign-total{color:var(--gold)}
+.slider-wrap{margin:16px 0 8px}
+.slider-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+.slider-top label{font-size:10px;letter-spacing:.16em;color:var(--muted)}
+.slider-top output{font-family:var(--mono);font-size:24px;color:var(--gold)}
+input[type=range]{
+  width:100%;appearance:none;height:3px;background:#303738;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--gold);border:2px solid #15191a;box-shadow:0 0 0 1px var(--gold);
+}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--gold);border:2px solid #15191a}
+.range-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px}
+.verdict{border-left:2px solid var(--teal);padding:8px 11px;background:rgba(115,168,157,.055);margin-top:11px;font-size:11px;line-height:1.7;color:#b9c9c3}
+.verdict.warn{border-color:var(--gold);background:rgba(196,163,95,.055);color:#d0c1a2}
+.verdict.bad{border-color:var(--red);background:rgba(185,79,67,.07);color:#dfb0a7}
+.tier-list{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.tier{
+  border:1px solid var(--line);background:rgba(20,24,26,.6);padding:10px 12px;
+  cursor:pointer;text-align:left;transition:border-color .15s,background .15s;
+}
+.tier:hover{border-color:#525c5d;background:rgba(28,33,35,.8)}
+.tier b{display:block;font-size:12px;font-weight:500;color:var(--ink)}
+.tier span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+.dice-box{text-align:center;padding:14px 0 4px}
+.dice-face{
+  width:68px;height:68px;border:1px solid var(--red);margin:0 auto 12px;
+  display:grid;place-items:center;font-family:var(--mono);font-size:30px;color:#e2aaa0;
+  background:rgba(185,79,67,.06);transform:rotate(2deg);
+}
+.dice-box .dice-note{font-size:10px;color:var(--muted);line-height:1.7}
+.asset-list{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.asset-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line-soft);padding:7px 10px;background:#0e1112}
+.asset-row .a-name{font-size:11px;color:var(--ink-dim)}
+.asset-row .a-type{font-family:var(--mono);font-size:8px;color:var(--muted);margin-left:4px}
+.asset-row .a-val{font-family:var(--mono);font-size:10px;color:var(--teal);white-space:nowrap}
+.asset-row button{font-size:9px;padding:3px 7px;border:1px solid var(--teal-dim);background:transparent;color:var(--teal);cursor:pointer;white-space:nowrap}
+.asset-row button:hover{background:rgba(115,168,157,.09)}
+.ledger-clause{border:1px solid var(--line-soft);padding:8px 10px;margin-bottom:6px;background:#0e1112}
+.clause-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.clause-name{font-size:11px;color:var(--ink-dim)}
+.clause-cost{font-family:var(--mono);font-size:10px;color:var(--gold)}
+.clause-meta{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px}
+.clause-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.clause-actions button{font-size:9px;padding:3px 7px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+.clause-actions button:hover{color:var(--ink);border-color:#4c5556}
+.clause-actions button:disabled{opacity:.35;cursor:not-allowed}
+.rule-list{margin:0;padding-left:18px;color:var(--ink-dim);font-size:12px;line-height:1.9}
+.rule-list li{margin:4px 0}
+.rule-list b{color:var(--ink);font-weight:500}
+
+/* ---------- Toast ---------- */
+#toast-container{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:150;display:flex;flex-direction:column;align-items:center;gap:7px;pointer-events:none;width:min(520px,calc(100vw - 32px))}
+.toast{
+  border:1px solid #434b4c;background:rgba(14,18,19,.96);color:var(--ink-dim);
+  padding:8px 12px;font-size:11px;line-height:1.5;max-width:330px;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);animation:toastIn .22s ease both;
+}
+.toast.loss{border-color:var(--red-dim);color:#e0b1a8}
+.toast.gain{border-color:var(--teal-dim);color:#b5d0c9}
+@keyframes toastIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+
+/* ---------- 响应式 ---------- */
+@media(max-width:1180px){
+  .game-body{grid-template-columns:258px minmax(0,1fr)}
+  .rail.right{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:12px;max-height:240px}
+  .rail.right .panel{margin:0}
+  #stage{padding:24px 26px 44px}
+}
+@media(max-width:820px){
+  #game-screen{height:auto;min-height:100dvh;overflow:visible}
+  .topbar{flex-wrap:wrap;gap:8px;padding:9px 12px}
+  .brand{font-size:19px}
+  .top-stats{order:3;flex:0 0 100%;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px 0}
+  .stat{padding:4px 8px;border-left:1px solid var(--line-soft);overflow:hidden}
+  .stat:nth-child(odd){border-left:0}
+  .stat-value{font-size:11px;overflow:hidden;text-overflow:ellipsis}
+  .stat-sub{display:none}
+  .top-tools{margin-left:auto}
+  .game-body{display:flex;flex-direction:column}
+  .rail{overflow:visible;max-height:none}
+  .rail.left{order:2;border-right:0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .rail.left .panel{margin:0}
+  #stage{order:1;overflow:visible;padding:20px 15px 34px}
+  .rail.right{order:3;display:block;max-height:none}
+  .rail.right .panel{margin-bottom:10px}
+  .start-card{padding:28px 22px}
+  .start-lore{grid-template-columns:1fr}
+  .start-form{flex-direction:column}
+  .start-actions{min-width:0}
+  .hub-grid{grid-template-columns:1fr}
+  .hub-card.story{grid-column:auto}
+  .battle-mid{grid-template-columns:1fr}
+  .vs{display:none}
+  .hand{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ending-card{padding:26px 20px}
+  .ending-summary{grid-template-columns:1fr 1fr}
+  .choice{padding-right:32px}
+}
+@media(max-width:520px){
+  .rail.left{display:block}
+  .rail.left .panel{margin-bottom:10px}
+  .stat-label{font-size:8px;letter-spacing:.08em}
+  .stat-value{font-size:10px}
+  .brand small{display:none}
+  .hand{grid-template-columns:1fr}
+  .bcard{min-height:135px}
+  .scene-title{font-size:26px}
+  .scene-body{font-size:14px;line-height:1.9}
+  .ending-summary{grid-template-columns:1fr 1fr}
+  #toast-container{bottom:10px;width:calc(100vw - 24px)}
+  .toast{max-width:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 开始界面 ============ -->
+<section id="start-screen">
+  <div class="start-card">
+    <div class="kicker">A playable prototype · 30 min</div>
+    <div class="title-block">
+      <h1 class="title-cn">异质</h1>
+      <div class="title-en">THE ALIEN QUALITY</div>
+    </div>
+    <p class="start-sub">在这个世界，力量从不免费。它只是被记在了别人的账上。</p>
+
+    <div class="start-lore">
+      <div class="lore-cell">
+        <b>异质 / 眷属</b>
+        <p>异质无法单独在普通位面具象。它必须依附契主，签下不可改写的代价条款，才能获得形态与力量。</p>
+      </div>
+      <div class="lore-cell">
+        <b>代价 / 天平</b>
+        <p>1 代价点 = 1 天寿命。付得太少，眷属虚弱或拒绝；付得刚好，满功率；付得太多，多出的部分白给；越过上限，暴走。</p>
+      </div>
+      <div class="lore-cell">
+        <b>你 / 账房</b>
+        <p>都市底层，欠着代价银行的钱。你唯一的天赋，是看见每一份契约的精确价格——以及一张没有字的空白契约。</p>
+      </div>
+    </div>
+
+    <div class="start-form">
+      <div class="name-field">
+        <label for="player-name">你的名字</label>
+        <input id="player-name" maxlength="12" value="沈账" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="start-actions">
+        <button class="btn primary" id="start-btn">签下自己的名字</button>
+      </div>
+    </div>
+
+    <div class="start-foot">
+      <span>单文件 · 无需联网 · 建议戴耳机，但这里没有声音。</span>
+      <span class="endings-count" id="start-endings">已收集结局 0 / 7</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 游戏界面 ============ -->
+<section id="game-screen" class="hidden">
+  <header class="topbar">
+    <div class="brand">异质 <small>DEMO v0.9</small></div>
+    <div class="top-stats">
+      <div class="stat life">
+        <div class="stat-label">剩余寿命</div>
+        <div class="stat-value" id="top-life">21,900 CP</div>
+        <div class="stat-sub" id="top-life-sub">60 年 0 天</div>
+      </div>
+      <div class="stat assets">
+        <div class="stat-label">可交易代价</div>
+        <div class="stat-value" id="top-assets">0 CP</div>
+        <div class="stat-sub" id="top-assets-sub">0 项资产</div>
+      </div>
+      <div class="stat turn">
+        <div class="stat-label">当前回合</div>
+        <div class="stat-value" id="top-turn">第 1 日</div>
+        <div class="stat-sub" id="top-turn-sub">行动 2 / 2</div>
+      </div>
+      <div class="stat precision">
+        <div class="stat-label">代价视界</div>
+        <div class="stat-value" id="top-precision">精确 0.5</div>
+        <div class="stat-sub" id="top-precision-sub">天赋在线</div>
+      </div>
+    </div>
+    <div class="top-tools">
+      <button class="icon-btn" data-action="help">规则</button>
+      <button class="icon-btn" data-action="restart">重开</button>
+    </div>
+  </header>
+
+  <div class="game-body">
+    <aside class="rail left">
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">契主账本</h2><span class="tiny mono" id="side-day">D01</span></div>
+        <div class="panel-body" id="player-panel"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">眷属</h2><span class="tiny mono" id="fam-count">0 / 3</span></div>
+        <div class="panel-body" id="familiar-list"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">空白契约</h2><span class="tiny mono" id="blank-state">SEALED</span></div>
+        <div class="panel-body" id="blank-panel"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">银行债务</h2><span class="tiny mono red" id="debt-tag">A1</span></div>
+        <div class="panel-body" id="debt-panel"></div>
+      </section>
+    </aside>
+
+    <main id="stage"></main>
+
+    <aside class="rail right">
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">事件记录</h2><span class="tiny mono">LOG</span></div>
+        <div class="panel-body"><div class="log-list" id="log-list"></div></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">当前契约原则</h2><span class="tiny mono">C / S</span></div>
+        <div class="panel-body" id="principle-panel"></div>
+      </section>
+    </aside>
+  </div>
+</section>
+
+<div id="modal-backdrop" class="hidden"></div>
+<div id="toast-container"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   0. 可调参数
+   ============================================================ */
+const CFG = Object.freeze({
+  INITIAL_LIFESPAN_CP: 21900,      // 60 年 × 365 天
+  MIN_CP: 0.5,                     // 最小代价单位：半天
+  LOW_TOLERANCE: 0.8,              // 低于 S×0.8：拒绝 / 虚弱 / 离场
+  HIGH_TOLERANCE: 1.3,             // 高于 S×1.3：暴走 / 契约作废
+  DAYS_PER_YEAR: 365,
+  INITIAL_HP: 100,
+  INITIAL_NEGOTIATION: 2,
+  ACTIONS_PER_DAY: 2,
+  COUNTDOWN_DAYS: 12,
+  DAILY_UPKEEP_DIVISOR: 30,        // 常驻 C 按每月 30 天摊
+  DAILY_BANK_FEE: 25,
+  CASH_OUT_RATE: 0.8,              // 可交易代价折现率
+  REWRITE_USES_PER_BATTLE: 2,
+  REWRITE_COOLDOWN: 3,
+  REWRITE_DURATION: 2,
+  HAND_SIZE: 5,
+  ENERGY_PER_TURN: 3,
+  MAX_LOG: 70,
+  BERSERK_DIE: 20
+});
+
+const SAVE_KEY = "yizhi_demo_endings_v1";
+
+/* ============================================================
+   1. 工具函数
+   ============================================================ */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+function roundHalf(n){ return Math.round(n * 2) / 2; }
+function randInt(lo, hi){ return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+function choose(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[c]));
+}
+function num(n){
+  const v = roundHalf(Number(n));
+  if (Number.isInteger(v)) return String(v);
+  return v.toFixed(1);
+}
+function comma(n){
+  return Number(n).toLocaleString("zh-CN", { maximumFractionDigits: 1 });
+}
+
+/* 精确 / 模糊显示总开关 -------------------------------------------------
+   precisionMode = true  -> 精确到 0.5 CP
+   precisionMode = false -> 约 30–40 CP
+   UI 中任何 CP 文本都应走 cpText() / fmtCP()
+   ---------------------------------------------------------------------- */
+function fuzzyRange(cp){
+  const v = Math.abs(Number(cp));
+  let spread;
+  if (v < 5) spread = Math.max(0.5, Math.ceil(v * 0.25 * 2) / 2);
+  else if (v < 20) spread = Math.max(1, Math.ceil(v * 0.2));
+  else spread = Math.max(5, Math.ceil(v * 0.18 / 5) * 5);
+  let low = Math.max(0, Math.floor((v - spread) * 2) / 2);
+  let high = Math.ceil((v + spread) * 2) / 2;
+  if (v >= 20){
+    low = Math.max(0, Math.floor(low / 5) * 5);
+    high = Math.ceil(high / 5) * 5;
+  }
+  return { low, high };
+}
+function fmtCP(cp){
+  const v = roundHalf(Number(cp));
+  if (state && state.player && state.player.precisionMode){
+    return num(v) + " CP";
+  }
+  if (v === 0) return "约 0 CP";
+  const r = fuzzyRange(v);
+  return "约 " + num(r.low) + "–" + num(r.high) + " CP";
+}
+function cpText(cp){ return fmtCP(cp); }
+function fmtSignedCP(cp){
+  const v = roundHalf(Number(cp));
+  if (v === 0) return "0 CP";
+  return (v > 0 ? "+" : "−") + fmtCP(Math.abs(v));
+}
+function yearsDays(cp){
+  const totalDays = Math.floor(cp / 1);
+  const years = Math.floor(totalDays / CFG.DAYS_PER_YEAR);
+  const days = totalDays - years * CFG.DAYS_PER_YEAR;
+  return { years, days, totalDays };
+}
+function fmtYears(cp){
+  const yd = yearsDays(cp);
+  return yd.years + " 年 " + yd.days + " 天";
+}
+function fmtRatio(f){
+  const r = f.S > 0 ? f.C / f.S : 0;
+  if (state && state.player && !state.player.precisionMode){
+    return "约 " + (Math.max(0, r * 0.8)).toFixed(1) + "–" + (r * 1.2).toFixed(1);
+  }
+  return r.toFixed(2);
+}
+function fmtLifeLong(cp){
+  if (state && state.player && !state.player.precisionMode){
+    const r = fuzzyRange(cp);
+    const lo = yearsDays(r.low), hi = yearsDays(r.high);
+    return "约 " + lo.years + "–" + hi.years + " 年";
+  }
+  return fmtYears(cp);
+}
+function fmtRange(low, high, suffix = "CP"){
+  return "约 " + num(roundHalf(low)) + "–" + num(roundHalf(high)) + " " + suffix;
+}
+function pc(n){ return Math.round(n * 100) + "%"; }
+
+/* ============================================================
+   2. 静态资产 / 全局状态
+   ============================================================ */
+const INITIAL_ASSETS = [
+  { id:"taste3",  label:"三年份的味觉", type:"感官", value:105, desc:"尝不出咸淡，但能尝出价码。" },
+  { id:"voice",   label:"一把烟嗓",     type:"感官", value:35,  desc:"声音的砂纸。抵押行按七成收。" },
+  { id:"favor",   label:"旧同事的人情", type:"社会关系", value:60, desc:"能借到一张折叠床，或一个假签名。" },
+  { id:"medal",   label:"父亲的奖章记忆", type:"记忆", value:80, desc:"一枚生锈的奖章，和那天下午的阳光。" }
+];
+
+let state = null;
+let sceneLock = false;
+let modalLocked = false;
+
+function newState(name){
+  return {
+    player: {
+      name: name || "无名氏",
+      lifespanCP: CFG.INITIAL_LIFESPAN_CP,
+      hp: CFG.INITIAL_HP,
+      maxHp: CFG.INITIAL_HP,
+      negotiationLevel: CFG.INITIAL_NEGOTIATION,
+      precisionMode: true,
+      flags: {}
+    },
+    assets: INITIAL_ASSETS.map(a => ({ ...a })),
+    familiars: [],
+    day: 1,
+    ap: CFG.ACTIONS_PER_DAY,
+    maxAp: CFG.ACTIONS_PER_DAY,
+    bankDebt: 1500,
+    countdownEndDay: 1 + CFG.COUNTDOWN_DAYS,
+    countdownKnown: false,
+    clues: {},
+    completed: {},
+    eventCooldowns: {},
+    currentEvent: null,
+    battle: null,
+    pendingOutcome: null,
+    ending: null,
+    logs: [],
+    stats: {
+      spentCP: 0,
+      gainedCP: 0,
+      battles: 0,
+      wins: 0,
+      captured: 0,
+      splits: 0,
+      rewriteUses: 0,
+      berserkRolls: 0
+    },
+    splitUsed: false,
+    suspicion: 0,
+    revealed: false,
+    startedAt: Date.now()
+  };
+}
+
+function addLog(text, type = ""){
+  if (!state) return;
+  state.logs.push({ day: state.day, text, type });
+  if (state.logs.length > CFG.MAX_LOG) state.logs.shift();
+}
+
+function toast(text, type = ""){
+  const host = $("#toast-container");
+  if (!host) return;
+  while (host.children.length >= 3) host.firstElementChild.remove();
+  const el = document.createElement("div");
+  el.className = "toast " + type;
+  el.textContent = text;
+  host.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = "0";
+    el.style.transform = "translateY(6px)";
+    el.style.transition = "opacity .2s, transform .2s";
+    setTimeout(() => el.remove(), 220);
+  }, 2600);
+}
+function clearToasts(){
+  const host = $("#toast-container");
+  if (host) host.innerHTML = "";
+}
+function scrollStageTop(){
+  const stage = $("#stage");
+  if (stage) stage.scrollTop = 0;
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+/* ============================================================
+   3. 数值引擎：CP / 契约天平 / 状态
+   ============================================================ */
+function effectiveNegotiation(){
+  if (!state) return 0;
+  let bonus = 0;
+  for (const f of state.familiars){
+    if (f.status === "broken" || f.status === "berserk") continue;
+    bonus += f.negotiation || 0;
+  }
+  return state.player.negotiationLevel + bonus;
+}
+
+function tradableTotal(){
+  if (!state) return 0;
+  return roundHalf(state.assets.reduce((s, a) => s + a.value, 0));
+}
+
+function famRatio(f){
+  return f.S > 0 ? f.C / f.S : 0;
+}
+
+function famWeakLevel(f){
+  const r = famRatio(f);
+  if (r >= 1) return 0;
+  if (r >= 0.9) return 1;
+  if (r >= 0.8) return 2;
+  return 3;
+}
+
+function famPowerFactor(f){
+  const r = famRatio(f);
+  if (r < 0.5) return 0;
+  if (r < 1) return clamp(r, 0, 1);
+  if (r <= CFG.HIGH_TOLERANCE) return 1;
+  return 1.1;
+}
+
+function weakMultiplier(f){
+  if (!f || f.status !== "weak") return 1;
+  const lv = famWeakLevel(f);
+  return lv >= 3 ? 0.6 : lv === 2 ? 0.8 : 0.92;
+}
+
+function famPower(f){
+  return Math.round(f.basePower * famPowerFactor(f) * weakMultiplier(f));
+}
+
+function refreshFamiliarStates(){
+  if (!state) return;
+  for (const f of state.familiars){
+    if (f.status === "broken") continue;
+    const r = famRatio(f);
+    if (r > CFG.HIGH_TOLERANCE + 0.0001){
+      f.status = "berserk";
+    } else if (r < 1 - 0.0001){
+      f.status = "weak";
+    } else {
+      f.status = "normal";
+    }
+    f.C = roundHalf(f.C);
+    f.power = famPower(f);
+  }
+}
+
+function calcUpkeep(){
+  if (!state) return 0;
+  let total = 0;
+  for (const f of state.familiars){
+    if (f.status === "broken") continue;
+    if (f.oneTime) continue;
+    const active = (f.clauses || []).filter(c => c.active !== false);
+    const activeC = active.reduce((s, c) => s + c.costCP, 0);
+    total += activeC / CFG.DAILY_UPKEEP_DIVISOR;
+  }
+  total = roundHalf(total);
+  if (state.familiars.length) total = Math.max(0, total);
+  return roundHalf(total);
+}
+
+function totalDailyCost(){
+  if (!state) return 0;
+  return roundHalf(calcUpkeep() + (state.day >= 2 ? CFG.DAILY_BANK_FEE : 0));
+}
+
+function spendCP(amount, reason, opts = {}){
+  if (!state || state.ending) return false;
+  amount = roundHalf(amount);
+  if (amount <= 0) return true;
+  state.player.lifespanCP = roundHalf(state.player.lifespanCP - amount);
+  state.stats.spentCP = roundHalf(state.stats.spentCP + amount);
+  addLog(`${reason}：失去 ${cpText(amount)}`, "loss");
+  if (!opts.silent) toast(`${reason} − ${cpText(amount)}`, "loss");
+  if (state.player.lifespanCP <= 0){
+    state.player.lifespanCP = 0;
+    endGame("death_balance");
+    return false;
+  }
+  return true;
+}
+
+function gainCP(amount, reason, opts = {}){
+  if (!state || state.ending) return;
+  amount = roundHalf(amount);
+  state.player.lifespanCP = roundHalf(state.player.lifespanCP + amount);
+  state.stats.gainedCP = roundHalf(state.stats.gainedCP + amount);
+  addLog(`${reason}：获得 ${cpText(amount)}`, "gain");
+  if (!opts.silent) toast(`${reason} + ${cpText(amount)}`, "gain");
+}
+
+function reduceBankDebt(amount, reason){
+  if (!state || state.ending) return;
+  amount = roundHalf(amount);
+  if (amount <= 0) return;
+  const before = state.bankDebt;
+  state.bankDebt = roundHalf(Math.max(0, before - amount));
+  const real = roundHalf(before - state.bankDebt);
+  if (real > 0) addLog(`银行债务减少 ${cpText(real)}（${reason}）。`, "gain");
+}
+
+function damageHP(amount, reason){
+  if (!state || state.ending) return;
+  amount = Math.max(0, Math.round(amount));
+  state.player.hp = Math.max(0, state.player.hp - amount);
+  addLog(`${reason}：体质 −${amount}`, "loss");
+  if (!state.battle) toast(`${reason} 体质 −${amount}`, "loss");
+  if (state.player.hp <= 0) endGame("death_body");
+}
+
+function healHP(amount, reason, silent = false){
+  if (!state) return;
+  amount = Math.max(0, Math.round(amount));
+  const before = state.player.hp;
+  state.player.hp = Math.min(state.player.maxHp, state.player.hp + amount);
+  const real = state.player.hp - before;
+  if (real > 0){
+    addLog(`${reason}：体质 +${real}`, "gain");
+    if (!silent) toast(`${reason} 体质 +${real}`, "gain");
+  }
+}
+
+function addAsset(asset){
+  if (!state) return;
+  state.assets.push({ ...asset, id: asset.id + "_" + Math.random().toString(36).slice(2, 7) });
+  addLog(`获得可交易代价：${asset.label}（${cpText(asset.value)}）`, "gain");
+  toast(`获得资产：${asset.label}`, "gain");
+}
+
+function removeAssetById(id){
+  const i = state.assets.findIndex(a => a.id === id);
+  if (i < 0) return null;
+  const [a] = state.assets.splice(i, 1);
+  addLog(`失去可交易代价：${a.label}（${cpText(a.value)}）`, "loss");
+  return a;
+}
+
+function addClue(id, label){
+  if (!state || state.clues[id]) return false;
+  state.clues[id] = label || id;
+  addLog(`获得线索：${label || id}`, "story");
+  toast(`获得线索：${label || id}`);
+  return true;
+}
+
+function clueCount(){
+  return state ? Object.keys(state.clues).length : 0;
+}
+
+function loseRandomAsset(reason){
+  if (!state || !state.assets.length) return null;
+  const idx = Math.floor(Math.random() * state.assets.length);
+  const a = state.assets[idx];
+  state.assets.splice(idx, 1);
+  addLog(`${reason}：失去 ${a.label}（${cpText(a.value)}）`, "loss");
+  return a;
+}
+
+function canAct(){
+  return state && !state.ending && !state.battle && !state.pendingOutcome;
+}
+
+/* ============================================================
+   4. 眷属定义
+   ============================================================ */
+const FAMILIAR_DEFS = {
+  yan: {
+    id: "yan",
+    name: "砚",
+    tag: "一号眷属",
+    form: "人形。湿黑长发，旧西装，袖口永远沾着墨。",
+    personality: "谨慎务实",
+    desc: "她把每一句话都当成条款来听。战力中等，擅长交涉。",
+    S: 300,
+    basePower: 62,
+    loyalty: 70,
+    aggression: 10,
+    negotiation: 1,
+    oneTime: false,
+    color: "#73a89d",
+    cards: [
+      { id:"yan_split", name:"拆字", cost:1, burst:3, damage:17, desc:"把敌人的动作拆成两个可以分别拒绝的条款。", flavor:"“你这一拳，语法不对。”" },
+      { id:"yan_read", name:"冷读", cost:1, burst:2, block:9, effect:"weaken", desc:"读出对方的犹豫，获得护甲，并使其下一击伤害降低。", flavor:"“你在害怕。”" },
+      { id:"yan_draft", name:"代笔", cost:1, burst:4, effect:"negotiateBuff", desc:"临时替你写一份交涉草案：本场战斗交涉判定 +3。", flavor:"“签字吧。手抖不算违约。”" }
+    ]
+  },
+  wu: {
+    id: "wu",
+    name: "雾牙",
+    tag: "二号眷属",
+    form: "雾形兽。只有牙齿和眼睛是实体，轮廓像一条被雨淋湿的狗。",
+    personality: "凶悍，无语言模块",
+    desc: "不会说话，但能听懂价码。高战力，技能代价重。",
+    S: 800,
+    basePower: 96,
+    loyalty: 55,
+    aggression: 28,
+    negotiation: 0,
+    oneTime: true,
+    color: "#b4685d",
+    cards: [
+      { id:"wu_bite", name:"雾噬", cost:1, burst:8, damage:29, desc:"雾里出现一排牙。简单，昂贵，有效。", flavor:"它没有叫。它只是张开了嘴。" },
+      { id:"wu_pounce", name:"裂界扑杀", cost:2, burst:16, damage:49, selfHp:4, desc:"短距离穿位，重击。反震会让你掉一点体质。", flavor:"空气像账本一样被撕开。" },
+      { id:"wu_void", name:"底牌·无光", cost:3, burst:34, damage:76, desc:"把一小块普通位面咬掉。代价按次结算。", flavor:"灯灭了一瞬。不是跳闸。" }
+    ]
+  },
+  heng: {
+    id: "heng",
+    name: "衡",
+    tag: "三号眷属",
+    form: "智者型。纸片一样薄的人形，栖在一把断掉的算盘里。",
+    personality: "审慎，话多",
+    desc: "战力低，擅长交涉与条款审计。可在中段签约。",
+    S: 200,
+    basePower: 36,
+    loyalty: 65,
+    aggression: 6,
+    negotiation: 2,
+    oneTime: false,
+    color: "#c4a35f",
+    cards: [
+      { id:"heng_clause", name:"条款驳斥", cost:1, burst:3, effect:"enemyAtkDown", desc:"指出敌人的攻击缺乏依据，使其攻击力 −4（整场）。", flavor:"“你的伤害没有法理基础。”" },
+      { id:"heng_audit", name:"漏洞审计", cost:1, burst:4, draw:2, energy:1, desc:"抽 2 张牌，获得 1 点行动力。", flavor:"“这里少了一个盖章。”" },
+      { id:"heng_stay", name:"暂缓执行", cost:2, burst:6, effect:"stun", desc:"让敌人的下一次行动暂缓执行。", flavor:"“请于三个工作日后再来杀我。”" }
+    ]
+  }
+};
+
+function makeFamiliar(id, C, opts = {}){
+  const def = FAMILIAR_DEFS[id];
+  const f = {
+    id: def.id,
+    name: def.name,
+    tag: def.tag,
+    form: def.form,
+    personality: def.personality,
+    desc: def.desc,
+    S: def.S,
+    C: roundHalf(C),
+    basePower: def.basePower,
+    power: def.basePower,
+    loyalty: opts.loyalty != null ? opts.loyalty : def.loyalty,
+    aggression: def.aggression,
+    negotiation: def.negotiation,
+    oneTime: def.oneTime,
+    color: def.color,
+    cards: def.cards.map(c => ({ ...c })),
+    status: "normal",
+    clauses: opts.clauses || [],
+    signedDay: state ? state.day : 1,
+    battleShift: 0,
+    memoryLabel: opts.memoryLabel || "",
+    captureImmune: false
+  };
+  refreshFamiliarStatesFor(f);
+  return f;
+}
+
+function refreshFamiliarStatesFor(f){
+  const r = f.C / f.S;
+  if (r > CFG.HIGH_TOLERANCE + 0.0001) f.status = "berserk";
+  else if (r < 1 - 0.0001) f.status = "weak";
+  else f.status = "normal";
+  f.power = Math.round(f.basePower * famPowerFactor(f) * weakMultiplier(f));
+}
+
+function getFamiliar(id){
+  return state ? state.familiars.find(f => f.id === id) : null;
+}
+
+function activeFamiliars(){
+  return state ? state.familiars.filter(f => f.status !== "broken") : [];
+}
+
+/* ============================================================
+   5. 事件内容
+   每个事件：type / title / location / body() / options()
+   选项：text / hint / run() / condition / disabledText
+   ------------------------------------------------------------
+   扩写方法：
+   - 复制一个事件对象，换 id / 文案 / options 即可加入 EVENTS。
+   - 支线放进 SIDE_EVENTS；repeatable 与 cooldownDays 控制重复。
+   - 选项里可以直接调用 spendCP / gainCP / addAsset / addClue /
+     startBattle / completeEvent / endGame。
+   - 所有 CP 文案请使用 cpText()，否则天赋丢失后不会自动转模糊。
+   ============================================================ */
+const EVENTS = {};
+
+/* ---------- 主线 01：空白契约 ---------- */
+EVENTS.m01 = {
+  id: "m01",
+  type: "主线 · 必做",
+  location: "旧港区 · 7 号楼 · 储物间",
+  title: "雨停之前",
+  free: true,
+  once: true,
+  body(){
+    const n = esc(state.player.name);
+    return `
+      <p>雨从铁皮棚上漏下来，像有人在楼上数硬币。房东把最后一串钥匙拍在你手心，说姐姐的柜子今天必须清空。</p>
+      <p>你已经七年没听过“姐姐”这两个字。她失踪那年，你还在替她垫付电话费。现在你只替自己垫付。</p>
+      <p>柜子里只有一只牛皮纸信封。信封里没有信，只有一张没有字的契约。你碰到它的一瞬间，视野里浮出一行不该存在的小字：</p>
+      <div class="dossier">
+        <div class="row"><span>契约编号</span><b>空白 / 未绑定</b></div>
+        <div class="row"><span>持有人</span><b>${n}</b></div>
+        <div class="row"><span>倒计时</span><b class="warn">12 日</b></div>
+        <div class="row"><span>姓名</span><b>弥</b></div>
+        <div class="row"><span>坐标</span><b>旧港区 · ██ 号井</b></div>
+      </div>
+      <p>你眨了眨眼。倒计时还在跳。姓名和坐标却像被墨水涂过，只剩一个“弥”字露在外面。</p>
+      <p>手机响了。来电显示是“代价银行 · 葛四”。你姐姐失踪前，最后一笔借款的担保人写的是你。</p>
+      <div class="quote"><span class="speaker">葛四 / 电话</span>“小沈啊，节哀。人不见了，债还在。明天来账房报到，给你安排个轻省活。”</div>
+      <p>你看着那张空白契约。它什么也没写，但你已经能看见它的价格：<strong>${cpText(0)}</strong>。不是因为它免费，是因为还没人敢在上面下笔。</p>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: "把空白契约收进内袋，去代价银行报到",
+        hint: "接受束缚 A1。倒计时开始。银行债务继承到你名下。",
+        tone: "gold",
+        run(){
+          state.player.flags.blankContract = true;
+          state.countdownKnown = true;
+          state.player.flags.countdownStarted = true;
+          state.bankDebt = 1500;
+          addLog("接受空白契约。倒计时：12 日。姓名与坐标被封印。", "story");
+          addLog(`代价银行将姐姐的 ${cpText(1500)} 债务转到你名下。`, "loss");
+          completeEvent("m01", {
+            stamp: "契约已接收",
+            title: "你成了欠债的人",
+            body: `
+              <p>你把契约折成四折，塞进内袋。纸比它看起来重。</p>
+              <p>楼下，代价银行的黑色面包车已经停在雨里。车窗摇下来，葛四冲你笑，牙缝里夹着午饭的韭菜。</p>
+              <p>“从今天起，你是我们分支账房的见习生。”他说，“工资没有，债务可以慢慢还。别想着跑。你身上那张纸，比手铐贵。”</p>
+              <div class="quote"><span class="speaker">系统 / 代价视界</span>【空白契约｜倒计时 12 日｜到期未履约：反噬】</div>
+              <p>你没问“履约”是什么意思。你只是把伞往他车顶的水洼下面挪了挪。</p>
+            `
+          });
+        }
+      }
+    ];
+  }
+};
+
+/* ---------- 主线 02：签一号眷属 ---------- */
+EVENTS.m02 = {
+  id: "m02",
+  type: "主线 · 签约",
+  location: "旧港区 · 24 小时面馆",
+  title: "第一份合同：砚",
+  once: true,
+  body(){
+    const precise = state.player.precisionMode;
+    return `
+      <p>面馆的灯管坏了半根，剩下半根在汤锅上方嗡嗡作响。你要了一碗最便宜的光面，坐到打烊。</p>
+      <p>她是在你数第三遍零钱的时候坐下的。旧西装，湿黑长发，袖口有洗不掉的墨。她把一份契约推过来，纸面自己展开。</p>
+      <div class="quote"><span class="speaker">砚 / 人形异质</span>“你身上有空白契约的味道。我不喜欢那个味道，但我喜欢你的账本。签吗？”</div>
+      <p>${precise
+        ? `你看见她的条款，精确到小数点后一位。她需要一份常驻代价，标价 <strong>300 CP / 月</strong>：一部分是你的色觉，另一部分从寿命里按日划扣。`
+        : `你看见她的条款，但数字已经糊成一团。她需要一份常驻代价，大约在 <strong>240–360 CP / 月</strong> 之间：一部分是你的色觉，另一部分从寿命里按日划扣。`}</p>
+      <p>她补充：“别付太多。多出来的部分，我不会找零。”</p>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: "让她坐到桌子对面，逐条谈价",
+        hint: "打开契约草案。C 可调；低于下限她会走，高于上限她可能暴走。",
+        tone: "gold",
+        run(){ openSignOne(); }
+      }
+    ];
+  }
+};
+
+/* ---------- 主线 03：教学战 ---------- */
+EVENTS.m03 = {
+  id: "m03",
+  type: "主线 · 战斗",
+  location: "旧港区 · 老周面馆后巷",
+  title: "第一笔烂账",
+  once: true,
+  body(){
+    const neg = effectiveNegotiation();
+    return `
+      <p>葛四给你派了第一单：去老周面馆收一笔 ${cpText(900)} 的欠款。老周拿不出钱，但他有一条“纸犬”——用契约束起来的低阶眷属，专门替他挡债。</p>
+      <p>“账房不能只会看数字。”葛四把一根电击棍塞给你，“去打，或者去谈。谈成了，算你本事；打输了，医药费从你寿命里扣。”</p>
+      <div class="dossier">
+        <div class="row"><span>目标</span><b>老周 / 纸犬</b></div>
+        <div class="row"><span>欠款</span><b>${cpText(900)}</b></div>
+        <div class="row"><span>你的交涉</span><b>${neg}</b></div>
+        <div class="row"><span>建议</span><b>先让眷属扛第一下</b></div>
+      </div>
+      <p>后巷的灯一闪一闪。纸犬从阴影里折出来，像一张被揉皱的收据。</p>
+    `;
+  },
+  options(){
+    const neg = effectiveNegotiation();
+    return [
+      {
+        text: "按流程收账，动手",
+        hint: "进入教学战。胜利可获得 CP、资产，并削减银行债务。",
+        tone: "danger",
+        run(){ startBattle("paperDog", "m03"); }
+      },
+      {
+        text: "先谈。把账算给他听",
+        hint: neg >= 3 ? "交涉达标，可跳过战斗。" : `交涉等级不足（需要 3，当前 ${neg}）。`,
+        tone: "teal",
+        condition: () => neg >= 3,
+        disabledText: "你的交涉还不够让一条纸犬听懂“债务重组”。",
+        run(){
+          gainCP(120, "谈成一笔分期");
+          reduceBankDebt(300, "老周的分期协议");
+          completeEvent("m03", {
+            stamp: "免于动手",
+            title: "纸犬没有咬你",
+            body: `<p>你把 ${cpText(900)} 拆成 18 期，每期 ${cpText(50)}，外加一句“你女儿下个月会回来吃饭”。老周签得很快，纸犬自己缩回了一张收据。</p><p>葛四在电话里沉默了三秒：“行。下回别这么心软。心软的人，账上一般都缺钱。”</p>`
+          });
+        }
+      },
+      {
+        text: `自己垫 ${cpText(300)}，把账平了`,
+        hint: `支付 ${cpText(300)}，获得面馆人情，避免战斗。`,
+        tone: "",
+        run(){
+          if (!spendCP(300, "替老周垫付")) return;
+          addAsset({ label:"老周的面馆人情", type:"社会关系", value:70, desc:"一碗永远不加价的光面。" });
+          reduceBankDebt(300, "垫付老周的账");
+          completeEvent("m03", {
+            stamp: "账平了",
+            title: "你买了一个人情",
+            body: `<p>你把钱转进银行的对公账户。老周不知道，纸犬也不知道。你只拿走了他柜台上一张写着“随叫随到”的纸条。</p><p>葛四说这叫“以贷养贷”。你说这叫“先让自己有地方吃面”。</p>`
+          });
+        }
+      }
+    ];
+  }
+};
+
+/* ---------- 主线 04：经营 / 洗代价 ---------- */
+EVENTS.m04 = {
+  id: "m04",
+  type: "主线 · 经营",
+  location: "代价银行 · 第三分理处 · 账房",
+  title: "账房里的第二种写法",
+  once: true,
+  body(){
+    return `
+      <p>第三分理处开在一家倒闭的典当行里。柜台后面挂着“公平交易”四个字，最后一个字掉了漆，看起来像“公平交马”。</p>
+      <p>葛四把一摞账本推给你：“今天的活。把左边这些人的代价，洗到右边这些空账户里。差额归你，三成。”</p>
+      <p>你翻开第一页，看见一排熟悉的名字。都是还不上债的普通人。每个名字后面都标着同一个去向：<em>金库 · 17 号井</em>。</p>
+      <p>第二页夹着一张 ${cpText(12)} 的味觉条款。客户想把它拆成两份，分别卖给两个买家。葛四没耐心，把裁纸刀扔给你。</p>
+      <div class="quote"><span class="speaker">空白契约 / 低语</span>【可拆分：1 条 → 2 条｜碎片不可再拆｜最小单位 0.5 CP】</div>
+    `;
+  },
+  options(){
+    const opts = [
+      {
+        text: "按葛四的意思洗账，差额装进自己口袋",
+        hint: `获得 ${cpText(500)}，银行债务减少；你会在账本上留下把柄。`,
+        tone: "danger",
+        run(){
+          gainCP(500, "洗代价抽成");
+          reduceBankDebt(200, "洗代价冲账");
+          state.player.flags.bankComplicit = true;
+          state.suspicion = Math.max(0, state.suspicion - 1);
+          completeEvent("m04", {
+            stamp: "已入账",
+            title: "你学会了第二种写法",
+            body: `<p>你把 ${cpText(900)} 写成 ${cpText(1200)}，再把多出来的 ${cpText(300)} 拆成四笔“咨询费”。葛四看了一眼，什么也没说，只在你肩上拍了两下。</p><p>你忽然明白，代价银行不是靠利息赚钱的。它靠把人的命拆得足够碎，碎到本人也认不出来。</p>`
+          });
+        }
+      },
+      {
+        text: "老老实实平账，只拿跑腿费",
+        hint: `获得 ${cpText(180)}；账本干净，但你今晚还是吃不起肉。`,
+        tone: "",
+        run(){
+          gainCP(180, "账房跑腿费");
+          reduceBankDebt(100, "账房跑腿冲账");
+          completeEvent("m04", {
+            stamp: "平账",
+            title: "一本干净的假账",
+            body: `<p>你把每一笔都对齐。数字没错，人也没了。葛四嫌你慢，但找不到扣钱的由头。</p><p>下班时，你把那张 ${cpText(12)} 的条款复印了一份，夹进自己的内袋。纸很薄，像一片指甲。</p>`
+          });
+        }
+      },
+      {
+        text: `用空白契约拆开那笔 ${cpText(12)} 的条款，收手续费`,
+        hint: `获得 ${cpText(120)}；演示“拆代价”，记录拆解次数。`,
+        tone: "teal",
+        run(){
+          gainCP(120, "拆代价手续费");
+          state.splitUsed = true;
+          state.stats.splits += 1;
+          addLog(`你拆开一条 ${cpText(12)} 的味觉条款：${cpText(6)} + ${cpText(6)}。碎片不可再拆。`, "story");
+          toast(`拆代价成功：${cpText(12)} → ${cpText(6)} + ${cpText(6)}`);
+          completeEvent("m04", {
+            stamp: "条款拆分",
+            title: "两份都能单独卖",
+            body: `<p>你把 ${cpText(12)} 的味觉条款从中间裁开。纸没有断，数字先断了：左边 ${cpText(6)}，右边 ${cpText(6)}，两个小章自己盖了上去。</p><p>买家很满意。葛四更满意。你看着那两片纸，想到姐姐留下的空白契约——如果一张纸能拆，一个人是不是也能？</p>`
+          });
+        }
+      },
+      {
+        text: "偷偷抄下账本里“金库 · 17 号井”的那几页",
+        hint: "获得线索；风险是被葛四发现（失去一部分寿命与体质）。",
+        tone: "gold",
+        run(){
+          addClue("ledger", "洗代价账本：债主都流向 17 号井");
+          state.player.flags.stoleLedger = true;
+          spendCP(300, "葛四发现你抄账，抽走一笔“保密费”");
+          damageHP(8, "葛四用账本边角砸了你的手");
+          completeEvent("m04", {
+            stamp: "抄本留存",
+            title: "数字下面还有名字",
+            body: `<p>你把那几页塞进鞋垫底下。葛四回来时，你已经在对另一本账。他盯着你看了很久，最后只抽走你 ${cpText(300)} 的“保密费”。</p><p>“看可以。”他说，“别把自己也看进去。”</p><p>那几页上，所有还不上债的人都被转进同一个地址：旧港区，17 号井。最后一页的页脚写着：<em>金库不储存钱，只储存到期的人。</em></p>`
+          });
+        }
+      }
+    ];
+    return opts;
+  }
+};
+
+/* ---------- 主线 05：签二号眷属 ---------- */
+EVENTS.m05 = {
+  id: "m05",
+  type: "主线 · 签约",
+  location: "鬼市 · 地下三层 · 活物摊",
+  title: "一条不会说话的雾",
+  once: true,
+  body(){
+    return `
+      <p>鬼市在旧地铁的废弃换乘通道里。摊主们不卖东西，只交换“还剩下的部分”。你被一个铁笼吸引，笼子里没有动物，只有一团雾。</p>
+      <p>雾里亮着两排牙。它不叫，也不扑。它只是盯着你内袋里那张空白契约。</p>
+      <div class="quote"><span class="speaker">摊主 / 缺了三根手指</span>“雾牙。战力和价格都很干净。它不要寿命，不要感官。它要一段记忆，一次性，${cpText(800)}。你给哪段？”</div>
+      <p>你调出价目。它确实值这个价：满功率时，它的咬合力足以把一辆车撕成两半。它的条款只有一行——<strong>以一段完整记忆置换</strong>。</p>
+      <p>记忆不可逆。不可拆。不可找回。你摸了摸自己的后脑勺，像在确认那里还剩多少东西。</p>
+    `;
+  },
+  options(){
+    const opts = [];
+    const sign = (kind, label, memory, loyalty, extra = {}) => {
+      opts.push({
+        text: `交出${label}`,
+        hint: `签约雾牙。一次性支付一段 ${cpText(800)} 等价的记忆。`,
+        tone: "danger",
+        run(){
+          const f = makeFamiliar("wu", 800, {
+            loyalty,
+            memoryLabel: memory,
+            clauses: [{ id:"wu_mem", type:"记忆", label: memory, costCP:800, isSplit:false, splitFrom:null, active:true }]
+          });
+          state.familiars.push(f);
+          state.player.flags[kind] = true;
+          if (extra.negotiation) state.player.negotiationLevel = Math.max(0, state.player.negotiationLevel + extra.negotiation);
+          addLog(`与雾牙签约。支付记忆：${memory}（${cpText(800)}，一次性）。`, "story");
+          completeEvent("m05", {
+            stamp: "记忆已交割",
+            title: "笼子空了",
+            body: `
+              <p>你把手伸进笼子。雾从指缝里钻进来，像一条冷掉的舌头。你感到某段东西被轻轻抽走，不疼，只是突然空了一块。</p>
+              <p>${memory}。你记得自己应该记得，但只剩下一个形状。</p>
+              <p>雾牙从笼子里走出来，落在你影子里。它没有看你，也没有看摊主。它看着你内袋里的空白契约，喉咙里滚出一声极低的、像账本合上的声音。</p>
+              <p>摊主把空笼子踢到一边：“它现在归你了。别喂太多，容易撑着。”</p>
+            `
+          });
+        }
+      });
+    };
+    sign("lostSisterMemory", "关于姐姐的童年记忆", "一段关于姐姐的童年记忆", 78);
+    sign("lostNameMemory", "你名字的来历", "你名字的来历", 66, { negotiation:-1 });
+    sign("lostRainMemory", "雨夜捡到契约的记忆", "雨夜捡到空白契约的记忆", 60);
+    opts.push({
+      text: "拒绝。你还没穷到要卖记忆",
+      hint: "不签约。后续战斗会更难，但记忆完整。",
+      tone: "",
+      run(){
+        state.player.flags.refusedWolf = true;
+        completeEvent("m05", {
+          stamp: "交易取消",
+          title: "你带着完整的自己离开",
+          body: `<p>你后退一步。雾里的牙齿慢慢合上，像一扇失望的门。</p><p>摊主耸耸肩：“记忆这东西，今天不卖，明天也未必更值钱。人倒是会一天比一天旧。”</p><p>你走出鬼市，雨还在下。你摸了摸后脑勺，确认那里什么都没少。</p>`
+        });
+      }
+    });
+    return opts;
+  }
+};
+
+/* ---------- 主线 06：天赋丢失 ---------- */
+EVENTS.m06 = {
+  id: "m06",
+  type: "主线 · 强制",
+  location: "代价银行 · 第三分理处 · 静默审计室",
+  title: "精度归零",
+  free: true,
+  once: true,
+  body(){
+    return `
+      <p>季度审计。葛四把你带进一间没有窗的房间，桌上只有一台针式打印机和一张空白对账单。</p>
+      <p>“把手放上去。”他说，“只是例行核对。你最近看得太多了。”</p>
+      <p>你看见自己的天赋被打印出来：<strong>代价视界 v0.7</strong>，绑定人：${esc(state.player.name)}，精度：0.5 CP。然后是最后一行：</p>
+      <div class="dossier">
+        <div class="row"><span>审计结果</span><b class="warn">精度超限</b></div>
+        <div class="row"><span>处理方式</span><b class="warn">降级为区间估值</b></div>
+        <div class="row"><span>不可逆</span><b>YES</b></div>
+        <div class="row"><span>备注</span><b>“你看见了不该看的名字。”</b></div>
+      </div>
+      <p>打印机吐出一张滚烫的纸。你眼前那些精确到 0.5 的数字突然开始融化，变成一团一团模糊的区间。</p>
+      <p>你伸手去抓最近的一个数字。它从指缝里漏掉了。</p>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: "把手从对账单上拿开。记住这间房的样子",
+        hint: "永久失去“代价视界”的数字化精度。所有 CP 显示切换为模糊区间。",
+        tone: "danger",
+        run(){
+          state.player.precisionMode = false;
+          state.player.flags.talentLost = true;
+          state.player.flags.auditRoom = true;
+          spendCP(300, "审计反噬");
+          damageHP(10, "审计反噬");
+          addLog("代价视界降级：精确 0.5 CP → 模糊区间。该状态持续存在。", "loss");
+          renderAll();
+          completeEvent("m06", {
+            stamp: "精度已注销",
+            title: "你变成了普通人",
+            body: `
+              <p>你走出审计室。走廊里的每一张契约都还在，只是数字变成了雾。“约 300–400 CP”“大约两三年”“不好说”。</p>
+              <p>你第一次理解普通人是怎么活下来的：他们不是不怕代价，他们只是看不清。</p>
+              <div class="quote"><span class="speaker">系统 / 代价视界</span>【精度：区间估值｜最小可辨：±18%】</div>
+              <p>葛四在背后说：“别难过。看不清，日子反而好过。”</p>
+              <p>你摸了摸内袋里的空白契约。它没有变模糊。它依然什么也没写。</p>
+            `
+          });
+        }
+      }
+    ];
+  }
+};
+
+/* ---------- 主线 07：签三号眷属 ---------- */
+EVENTS.m07 = {
+  id: "m07",
+  type: "主线 · 签约",
+  location: "旧港茶馆 · 二楼靠窗",
+  title: "第三份合同：衡",
+  once: true,
+  body(){
+    return `
+      <p>茶馆二楼，一个纸片一样薄的人形坐在断掉的算盘上。它自称衡，说话时每根手指都在快速拨动不存在的算珠。</p>
+      <div class="quote"><span class="speaker">衡 / 智者型异质</span>“你姐姐还欠我一个答案。她已经还不了了。你来还，或者让我跟着你，自己去找。”</div>
+      <p>它需要一份常驻代价：一段社会关系。具体来说，是楼下陈姨对你的照顾。签了，她会在三天内慢慢忘记你为什么值得她留一盏灯。</p>
+      <p>你的代价视界已经坏了。你只能看见一团模糊的区间，像隔着毛玻璃看一笔账。衡把契约推过来，耐心地等你猜。</p>
+      <div class="quote"><span class="speaker">衡</span>“别紧张。谈价本来就是瞎猜。只不过以前你猜得准。”</div>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: "按她的开价签。宁可多付，也别让她走",
+        hint: "支付完整常驻代价。契约满功率。具体数额已无法精确看见。",
+        tone: "gold",
+        run(){ finalizeSignThree(200); }
+      },
+      {
+        text: "试着压一点价。你应该还撑得住",
+        hint: "支付偏低的代价。契约可能成立，但战力衰减。",
+        tone: "",
+        run(){ finalizeSignThree(170); }
+      },
+      {
+        text: "主动加码。用多余的钱买忠诚",
+        hint: "支付更高代价。契约满功率，但多出的部分白给。",
+        tone: "danger",
+        run(){ finalizeSignThree(250); }
+      },
+      {
+        text: "拒绝。你已经不想再欠任何人了",
+        hint: "不签约。后续某些路径会更难。",
+        tone: "",
+        run(){
+          state.player.flags.refusedHeng = true;
+          completeEvent("m07", {
+            stamp: "未签字",
+            title: "算盘合上",
+            body: `<p>衡看着你，像看一笔坏账。“你会回来的。”它说，“不是因为我，是因为你姐姐。”</p><p>你走下茶馆。陈姨在楼下收衣服，冲你点了点头。你忽然不确定她明天还会不会点头。</p>`
+          });
+        }
+      }
+    ];
+  }
+};
+
+/* ---------- 主线 08：猎契人 / 契约断裂 ---------- */
+EVENTS.m08 = {
+  id: "m08",
+  type: "主线 · 战斗",
+  location: "旧港区 · 废弃冷库屋顶",
+  title: "猎契人",
+  once: true,
+  body(){
+    const hasHeng = !!getFamiliar("heng");
+    return `
+      <p>你按账本上的地址找到冷库。屋顶上有人等你，穿一件猎装，腰间挂着一排小玻璃瓶，每只瓶子里都有一截断掉的契约在抽搐。</p>
+      <div class="quote"><span class="speaker">刻耳 / 猎契人</span>“沈账。你名下有三份契约。我数过了。交出来，我让你走。猎契人不做亏本买卖。”</div>
+      <p>你看见他的“契约剥离术”：一种把眷属从契主身上强行撕下来的技术。被撕下来的眷属不会死，只会变成他腰上的瓶子。</p>
+      <p>${hasHeng ? "衡在你影子里低声说：“他的条款有漏洞。让我先谈。”" : "你身边没有能替你谈的人。风很冷，玻璃瓶在响。"}</p>
+    `;
+  },
+  options(){
+    const opts = [
+      {
+        text: "先发制人",
+        hint: "进入战斗。刻耳会尝试强行夺走你的一只眷属，触发 3 回合夺回窗口。",
+        tone: "danger",
+        run(){ startBattle("hunter", "m08"); }
+      }
+    ];
+    if (getFamiliar("heng")){
+      opts.push({
+        text: "让衡先谈。把“剥离术”的漏洞指给他看",
+        hint: "削弱敌人后进入战斗。谈判失败，但能争取到优势。",
+        tone: "teal",
+        run(){
+          state.player.flags.hunterWeakened = true;
+          addLog("衡与刻耳交涉失败，但撕掉了对方一层契皮。", "story");
+          startBattle("hunter", "m08", { enemyMod:{ atk:-2, hp:-20 } });
+        }
+      });
+    }
+    if (getFamiliar("wu")){
+      opts.push({
+        text: "交出雾牙的契约，换自己平安",
+        hint: "失去二号眷属，获得一笔补偿；跳过战斗。",
+        tone: "",
+        run(){
+          state.familiars = state.familiars.filter(f => f.id !== "wu");
+          gainCP(300, "刻耳的“遣散费”");
+          state.player.flags.soldWolf = true;
+          completeEvent("m08", {
+            stamp: "交易成立",
+            title: "瓶子多了一只",
+            body: `<p>你把雾牙的契约递过去。刻耳用两根手指拈住，像拈一片鱼鳞。雾牙没有挣扎，也没有看你。它只是化成雾，被塞进一只新的玻璃瓶。</p><p>刻耳丢给你 ${cpText(300)}：“你会后悔的。不过不是今天。”</p><p>你听着瓶子在风里轻轻碰撞。你没有回头。</p>`
+          });
+        }
+      });
+    }
+    return opts;
+  }
+};
+
+/* ---------- 主线 09：金库线索 ---------- */
+EVENTS.m09 = {
+  id: "m09",
+  type: "主线 · 探索",
+  location: "旧港区 · 17 号井",
+  title: "井底有门",
+  once: true,
+  body(){
+    const hasHeng = !!getFamiliar("heng");
+    return `
+      <p>17 号井在旧港区最老的巷子里。井口被一块水泥板盖着，板上刻着“市政封存 · 请勿开启”。你数了数，封条上的日期是姐姐失踪后的第三天。</p>
+      <p>水泥板下面没有水。只有一段向下的铁梯，和一扇嵌在井壁里的门。门上有编号：<strong>第三金库 · 17 号</strong>。</p>
+      <p>${hasHeng ? "衡贴着门听了一会儿：“里面有很多人在排队。没有声音，但有编号。”" : "你把耳朵贴在门上。里面很安静，像一本翻到最后一页的账。"}</p>
+    `;
+  },
+  options(){
+    const opts = [
+      {
+        text: "伪造一张提货单，混进去",
+        hint: `支付 ${cpText(400)} 的“打印费”。获得金库线索。`,
+        tone: "gold",
+        run(){
+          if (!spendCP(400, "伪造提货单")) return;
+          addClue("vault", "第三金库：储存的不是钱，是到期的人");
+          state.player.flags.vaultSeen = true;
+          completeEvent("m09", {
+            stamp: "已入库",
+            title: "金库里没有钱",
+            body: `<p>门后是一条向下的走廊，两侧是一排排金属抽屉，每个抽屉上都有一个名字和一行到期日。你打开最近的几个：空的。</p><p>再往里，抽屉变成了玻璃罐。罐子里是雾、是牙、是半张脸、是一段还在循环的童年。每个罐子上都贴着“待清算”。</p><p>最里面有一本总账。你翻到最后一页，看见一行手写体：<em>“弥 · 未到期 · 保留。等她的弟弟来。”</em></p><p>你合上账本。走廊尽头传来脚步声，像有人在用算盘走路。</p>`
+          });
+        }
+      },
+      {
+        text: "把坐标卖给猎契人，换一笔快钱",
+        hint: `获得 ${cpText(1200)}，银行债务减少。失去独占线索。`,
+        tone: "danger",
+        run(){
+          gainCP(1200, "出售 17 号井坐标");
+          reduceBankDebt(400, "坐标情报费冲账");
+          state.player.flags.soldCoordinates = true;
+          completeEvent("m09", {
+            stamp: "情报售出",
+            title: "你把井卖了",
+            body: `<p>刻耳的人在巷口等你。你只说了三个字：“17 号。”对方把一叠不连号的 CP 凭证塞进你手里。</p><p>“聪明。”他说，“可惜聪明人通常活不到用钱的时候。”</p><p>你看着他们撬开井盖。井底传来一声很轻的、像纸张撕裂的响动。你告诉自己，那只是风。</p>`
+          });
+        }
+      },
+      {
+        text: "先不动。回地面，把门的位置记牢",
+        hint: "不消耗额外代价。事件保留，但你今天的时间已经花掉了。",
+        tone: "",
+        run(){
+          addLog("你记住了 17 号井的位置，但没有下去。", "story");
+          state.currentEvent = null;
+          showHub();
+        }
+      }
+    ];
+    if (getFamiliar("heng")){
+      opts.unshift({
+        text: "让衡用旧关系调出金库平面图",
+        hint: `支付 ${cpText(200)}。获得更完整的金库线索。`,
+        tone: "teal",
+        run(){
+          if (!spendCP(200, "衡的旧关系疏通费")) return;
+          addClue("vault", "第三金库：储存的不是钱，是到期的人");
+          state.player.flags.vaultSeen = true;
+          completeEvent("m09", {
+            stamp: "平面图到手",
+            title: "金库的第二种读法",
+            body: `<p>衡用一段旧关系换来一张平面图。金库不是仓库，是消化系统：入口、走廊、胃、排出口。所有抽屉最终都通向最深处的一间“清算室”。</p><p>“你姐姐不在抽屉里。”衡说，“她在胃里。被留着，慢慢消化。”</p><p>你把平面图折好。纸上有股很淡的、陈姨家洗衣粉的味道。</p>`
+          });
+        }
+      });
+    }
+    return opts;
+  }
+};
+
+/* ---------- 主线 10：Boss 战 ---------- */
+EVENTS.m10 = {
+  id: "m10",
+  type: "主线 · BOSS",
+  location: "第三金库 · 清算室",
+  title: "金库里的秤",
+  once: true,
+  body(){
+    return `
+      <p>清算室没有天花板。抬头能看见井口，雨从很高的地方落下来，落到一半就被某种东西蒸干了。</p>
+      <p>房间中央站着一个很高的人形，由无数张账页叠成。她没有脸，胸口挂着一杆黄铜秤。秤盘上各放着一样东西：左边是一枚牙齿，右边是一张写着“弥”的标签。</p>
+      <div class="quote"><span class="speaker">清算人 · 秤</span>“契主 ${esc(state.player.name)}。你的总负债已逾期。按第三金库条例，你有两个选择：被清算，或成为清算的一部分。”</div>
+      <p>你看见金库深处的玻璃罐。里面的人还活着，只是被拆成了可计价的部件。代价银行用这些代价喂养着某个没有契主的“东西”——它在世界欠异质的旧账里长大。</p>
+      <p>“我姐姐在哪？”你问。</p>
+      <p>秤用没有脸的头转向你：“她把自己写进了总账。为了让某个人来改写最后一页。”</p>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: "听完。记住她说的每一个字",
+        hint: "获得真相线索，然后进入 Boss 战。",
+        tone: "gold",
+        run(){
+          addClue("scaleTruth", "清算人：金库在喂养一个没有契主的异质");
+          state.player.flags.knowsScale = true;
+          startBattle("scale", "m10");
+        }
+      },
+      {
+        text: "不听。先把秤砸了",
+        hint: "直接进入 Boss 战；失去一段真相。",
+        tone: "danger",
+        run(){ startBattle("scale", "m10"); }
+      },
+      {
+        text: "转身离开。你还不想死在这口井里",
+        hint: "放弃 Boss 战。揭晓结局时你仍可选择退路，但无法真正清算银行。",
+        tone: "",
+        run(){
+          state.player.flags.fledScale = true;
+          completeEvent("m10", {
+            stamp: "撤离",
+            title: "你爬回了地面",
+            body: `<p>你转身爬上铁梯。秤没有追，只在背后说：“逾期会累计。你姐姐替你垫了七年，利息不便宜。”</p><p>你推开井盖，雨水灌进领口。街上有人在卖烤红薯，热气腾腾。你忽然很想哭，但算了一下，哭会脱水，脱水要补水，补水要花钱。</p><p>你决定先不哭。</p>`
+          });
+        }
+      }
+    ];
+  }
+};
+
+/* ---------- 主线 11：倒计时到期 ---------- */
+EVENTS.m11 = {
+  id: "m11",
+  type: "主线 · 强制",
+  location: "旧港区 · 17 号井 · 井口",
+  title: "第十三日，名字自己浮出来",
+  free: true,
+  once: true,
+  body(){
+    const penalty = clueCount() >= 2 ? 2500 : 6000;
+    return `
+      <p>第十三天。你在井口醒来，不记得自己是怎么来的。内袋里的空白契约在发烫，像一块刚从炉子里夹出来的铁。</p>
+      <p>倒计时归零。纸面上，那些被涂黑的字一笔一画地浮出来：</p>
+      <div class="dossier">
+        <div class="row"><span>姓名</span><b>弥</b></div>
+        <div class="row"><span>关系</span><b>你的姐姐</b></div>
+        <div class="row"><span>坐标</span><b>旧港区 · 17 号井 · 第三金库</b></div>
+        <div class="row"><span>契约状态</span><b class="warn">未履约</b></div>
+        <div class="row"><span>反噬</span><b class="warn">${cpText(penalty)}</b></div>
+      </div>
+      <p>契约背面还有一行极小的字，是你姐姐的笔迹：<em>“小账，别替我签字。替我改。”</em></p>
+      <p>然后反噬来了。像有人从你身体里抽走一叠从未花过的钱。</p>
+    `;
+  },
+  options(){
+    const penalty = clueCount() >= 2 ? 2500 : 6000;
+    return [
+      {
+        text: "把血咽回去。记住这行字",
+        hint: `承受反噬 ${cpText(penalty)} 与体质损伤。`,
+        tone: "danger",
+        run(){
+          spendCP(penalty, "空白契约倒计时反噬");
+          damageHP(clueCount() >= 2 ? 15 : 30, "倒计时反噬");
+          state.revealed = true;
+          state.player.flags.reveal = true;
+          addLog("倒计时到期。揭示姓名：弥；坐标：17 号井·第三金库。", "story");
+          if (state.ending) return;
+          completeEvent("m11", {
+            stamp: "倒计时归零",
+            title: "她叫弥",
+            body: `<p>你跪在井边吐了一口血。血落在水泥板上，像一枚被盖歪的章。</p><p>你终于想起来了。姐姐叫弥。她失踪前最后一个电话是打给你的，你没接，因为那天你在加班，加班费是 1.5 倍。</p><p>契约上的坐标在发烫。井盖下面，有人轻轻敲了三下。</p><p>你不知道那是她，还是那个东西。但你知道，今天必须下去。</p>`
+          });
+        }
+      }
+    ];
+  }
+};
+
+/* ---------- 主线 12：结局分支 ---------- */
+EVENTS.m12 = {
+  id: "m12",
+  type: "终局 · 分支",
+  location: "第三金库 · 总账室",
+  title: "井底的门",
+  once: true,
+  body(){
+    const canTruth = state.player.flags.bossDefeated && clueCount() >= 2;
+    const canHidden = state.player.flags.bossDefeated && clueCount() >= 3 && state.splitUsed;
+    return `
+      <p>你站在总账室中央。秤已经倒下，账页散了一地。每张纸上都是一个被拆开的人，每个数字后面都有一声很轻的呼吸。</p>
+      <p>最深处有一扇门。门上没有把手，只有一行字：<strong>“本页可改写。需持有人签名。”</strong></p>
+      <p>门后传来姐姐的声音，很近，又像隔了七年：“小账，你终于把账看到了最后一页。”</p>
+      <p>葛四的声音从你身后的对讲机里传出来：“别开门。把契约交出来，你可以活着，债务一笔勾销。银行需要一个新的守门人。你比弥听话。”</p>
+      <p>你低头看自己的手。手里有空白契约，有还没花完的寿命，有一堆看不清的数字。你忽然发现，做决定和做账其实是一回事：都是选择让谁承担代价。</p>
+      ${canHidden ? `<div class="quote"><span class="speaker">空白契约 / 最终权限</span>【条款重组可用｜线索 ${clueCount()}｜拆分记录 ${state.stats.splits}｜目标：世界债务总条款】</div>` : ""}
+    `;
+  },
+  options(){
+    const canTruth = state.player.flags.bossDefeated && clueCount() >= 2;
+    const canHidden = state.player.flags.bossDefeated && clueCount() >= 3 && state.splitUsed;
+    return [
+      {
+        text: "接受银行的新契，成为第三金库的守门人",
+        hint: "结局：被银行吞并。债务清零，但你不再是自己的契主。",
+        tone: "danger",
+        run(){ endGame("bank"); }
+      },
+      {
+        text: "打开总账，把储存的代价还给整座城市",
+        hint: canTruth ? "结局：揭示部分真相，战胜银行。" : "条件不足：需要击败清算人，并掌握至少 2 条线索。",
+        tone: "gold",
+        condition: () => canTruth,
+        disabledText: "你还没有资格打开这扇门。",
+        run(){ endGame("truth"); }
+      },
+      {
+        text: "用空白契约改写世界债务的总条款",
+        hint: canHidden ? "隐藏结局：需要击败 Boss、3 条线索、至少一次拆代价。" : "条件不足：Boss、3 条线索、拆代价记录缺一不可。",
+        tone: "teal",
+        condition: () => canHidden,
+        disabledText: "你看不清那一行总条款。它需要的不是勇气，是精度之外的另一种东西。",
+        run(){ endGame("hidden"); }
+      },
+      {
+        text: "转身离开。让这口井继续欠着",
+        hint: "结局：带着完整的自己离开，留下还不完的账。",
+        tone: "",
+        run(){ endGame("leave"); }
+      }
+    ];
+  }
+};
+
+/* ---------- 支线：经营 / 探索 ---------- */
+const SIDE_EVENTS = {};
+
+SIDE_EVENTS.s_contract = {
+  id: "s_contract",
+  type: "支线 · 经营",
+  location: "旧港区 · 鱼摊",
+  title: "鱼摊的听觉",
+  repeatable: true,
+  cooldownDays: 2,
+  body(){
+    return `
+      <p>鱼摊老板老赵最近听不见海浪。不是耳朵坏了，是他把听觉拆成了三份，卖了两份，剩下的一份只够听见顾客还价。</p>
+      <p>他听说你会“拆代价”，想请你把最后一份听觉再拆开，卖一半给女儿交学费，留一半听摊。</p>
+      <p>你看见他的条款：一条 ${cpText(24)} 的听觉，边缘已经起毛。再拆一次，最多只能拆成两条 ${cpText(12)} 的碎片。</p>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: `拆开。收 ${cpText(150)} 手续费`,
+        hint: `获得 ${cpText(150)}；记录拆解次数。`,
+        tone: "teal",
+        run(){
+          gainCP(150, "拆听觉手续费");
+          state.splitUsed = true;
+          state.stats.splits += 1;
+          addLog(`你把一条 ${cpText(24)} 的听觉拆成 ${cpText(12)} + ${cpText(12)}。碎片不可再拆。`, "story");
+          finishSide("s_contract", "两半都听得见", `<p>你用空白契约在条款中间划了一刀。老赵的左耳突然听见了海浪，右耳听见了女儿在隔壁背课文。</p><p>他把 ${cpText(150)} 推给你，又塞了一条咸鱼：“拿回去煮汤。别嫌咸，我尝不出来了。”</p>`);
+        }
+      },
+      {
+        text: `只做评估，收 ${cpText(60)}`,
+        hint: `获得 ${cpText(60)}。不拆条款，风险更小。`,
+        tone: "",
+        run(){
+          gainCP(60, "条款评估费");
+          finishSide("s_contract", "评估完成", `<p>你告诉老赵：再拆下去，他的听觉会碎到无法辨认。女儿可以申请助学契，利息比卖耳朵低。</p><p>他沉默了很久，把 ${cpText(60)} 推给你：“你们这些看账的，嘴都比刀快。”</p>`);
+        }
+      },
+      {
+        text: "免费帮忙，换他一条人情",
+        hint: "获得可交易资产“鱼摊人情”。",
+        tone: "gold",
+        run(){
+          addAsset({ label:"鱼摊老赵的人情", type:"社会关系", value:70, desc:"凌晨三点也能敲开的后门。" });
+          finishSide("s_contract", "没有收费", `<p>你替他拆了条款，没收钱。老赵把摊位上最好的一条鲈鱼包起来，又写了张纸条：“以后来，鱼随便拿。”</p><p>你把纸条收好。在这个城市，一条人情有时候比一张契约硬。</p>`);
+        }
+      }
+    ];
+  }
+};
+
+SIDE_EVENTS.s_market = {
+  id: "s_market",
+  type: "支线 · 探索",
+  location: "鬼市 · 零号摊",
+  title: "三号摊的封存记忆",
+  repeatable: true,
+  cooldownDays: 2,
+  body(){
+    return `
+      <p>鬼市今天多了个摊位。摊主是个戴防毒面具的小孩，桌上摆着一排玻璃弹珠。每颗弹珠里都封着一小段记忆，标价从半天寿命到几年不等。</p>
+      <p>“保真。”小孩说，声音闷在面具里，“不保有用。”</p>
+      <p>你蹲下来，看见一颗弹珠里有海，另一颗里有人在结婚，还有一颗里什么也没有，只有一间亮着灯的厨房。</p>
+    `;
+  },
+  options(){
+    const opts = [
+      {
+        text: `花 ${cpText(240)} 买一颗“海”的记忆`,
+        hint: `支付 ${cpText(240)}；获得一枚可交易记忆。`,
+        tone: "teal",
+        run(){
+          if (!spendCP(240, "买下封存记忆")) return;
+          addAsset({ label:"一颗装着海的记忆", type:"记忆", value:420, desc:"没见过海的人，也能在里面站一会儿。" });
+          finishSide("s_market", "买定离手", `<p>你捏碎弹珠。海风从指缝里漏出来，带着盐和柴油的味道。你站在鬼市里，听见了几百公里外的浪。</p><p>小孩说：“值吧？”你说：“按账面算，值。”他说：“按人算呢？”你没回答。</p>`);
+        }
+      },
+      {
+        text: "卖掉自己的一段听觉",
+        hint: `获得 ${cpText(300)}。永久标记“听觉缺损”。`,
+        tone: "danger",
+        run(){
+          if (state.player.flags.soldHearing) return;
+          state.player.flags.soldHearing = true;
+          gainCP(300, "出售一段听觉");
+          addLog("你卖掉了左耳的高频听觉。世界安静了一小块。", "loss");
+          finishSide("s_market", "世界静了一块", `<p>摊主用一根细针从你耳后挑出一段透明的线。你听见“啵”的一声，然后世界少了一层。</p><p>雨还是雨，但不再有雨丝打在铁皮上的高频。你忽然理解为什么有些人愿意活在模糊里。</p>`);
+        }
+      },
+      {
+        text: "只逛不买。听摊主们聊天",
+        hint: "不花钱。也许能听到一点银行的消息。",
+        tone: "",
+        run(){
+          state.player.flags.marketRumor = true;
+          addLog("你在鬼市听到传闻：最近有人在高价收“未到期的契主”。", "story");
+          finishSide("s_market", "传闻不值钱", `<p>你在鬼市蹲了半个钟头，听见三件事：银行在收未到期的契主；17 号井晚上有人哭；猎契人最近不接散单。</p><p>你把这三件事分别按可信度标了价，最贵的那条也只值一杯面汤。</p>`);
+        }
+      }
+    ];
+    return opts;
+  }
+};
+
+SIDE_EVENTS.s_archive = {
+  id: "s_archive",
+  type: "支线 · 探索",
+  location: "旧港档案馆 · 地下二层",
+  title: "失踪人口登记簿",
+  repeatable: false,
+  body(){
+    return `
+      <p>旧港档案馆的地下二层常年漏水。管理员收了你 ${cpText(60)}，让你自己进去找，“别把水带出来”。</p>
+      <p>你找到七年前的失踪人口登记簿。你姐姐那一页被撕掉了，但装订线里还留着一角。上面有她的签名，和一个陌生的编号：<strong>M-17</strong>。</p>
+      <p>旁边还有一本金库结构图，封面写着“第三分理处 · 内部传阅”。</p>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: "翻姐姐的失踪档案",
+        hint: `支付 ${cpText(60)}；获得线索“M-17”，体质受损。`,
+        tone: "gold",
+        run(){
+          if (!spendCP(60, "档案馆查询费")) return;
+          addClue("sisterFile", "失踪档案 M-17：姐姐是自愿进入金库的");
+          damageHP(8, "档案室的霉味让你咳了整夜");
+          completeEvent("s_archive", {
+            stamp: "M-17",
+            title: "她是自己走进去的",
+            body: `<p>档案最后一页是一份自愿入库声明。签名是姐姐的，日期是她失踪前一天。声明下面有一行小字：<em>“申请人要求保留意识，用于后续条款重组实验。”</em></p><p>实验对象编号：M-17。实验负责人：空白。</p><p>你盯着“空白”两个字看了很久。原来那张契约不是她捡来的。是她留下的。</p>`
+          });
+        }
+      },
+      {
+        text: "抄下金库结构图",
+        hint: `支付 ${cpText(200)} 复印费；获得金库线索。`,
+        tone: "teal",
+        run(){
+          if (!spendCP(200, "结构图复印费")) return;
+          addClue("vaultMap", "第三金库结构：清算室位于最深处");
+          completeEvent("s_archive", {
+            stamp: "结构图",
+            title: "金库是一张嘴",
+            body: `<p>结构图上，第三金库的剖面像一张张开的嘴：入口是喉咙，走廊是食道，抽屉是牙，清算室是胃。</p><p>最深处标着一行铅笔字：<em>“总账室 · 仅持有人可入”</em>。</p><p>你把图折好。管理员在楼上喊：“找到没有？我要锁门了。”</p>`
+          });
+        }
+      },
+      {
+        text: "什么也不拿，离开",
+        hint: "不消耗额外资源。事件结束。",
+        tone: "",
+        run(){
+          completeEvent("s_archive", {
+            stamp: "空手",
+            title: "你带走了一身霉味",
+            body: `<p>你合上登记簿，把它放回原处。有些东西一旦拿走，就得开始负责。</p><p>管理员闻了闻你：“找到什么了？”你说：“没有。”他说：“那 ${cpText(60)} 不退。”</p>`
+          });
+        }
+      }
+    ];
+  }
+};
+
+SIDE_EVENTS.s_rest = {
+  id: "s_rest",
+  type: "支线 · 恢复",
+  location: "旧港区 · 十二元旅馆",
+  title: "十二元一晚的床",
+  repeatable: true,
+  cooldownDays: 1,
+  body(){
+    return `
+      <p>十二元一晚的旅馆，床单上有上一位客人留下的形状。老板娘说热水限时十分钟，超时另算。</p>
+      <p>你把空白契约压在枕头下面。它还在发烫，但你已经学会假装那是暖气。</p>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: "睡到天黑",
+        hint: `支付 ${cpText(30)}；恢复 35 点体质。`,
+        tone: "",
+        run(){
+          if (!spendCP(30, "旅馆房费")) return;
+          healHP(35, "睡了一觉");
+          finishSide("s_rest", "你睡了一会儿", `<p>你梦见自己在对账。账本两边都是空白，只有中间一行写着“应付：全部”。</p><p>醒来时天已经黑了。热水果然只来了八分钟。你摸黑穿好衣服，觉得身体轻了一点。</p>`);
+        }
+      },
+      {
+        text: "不睡。坐在床边整理今天的账",
+        hint: "不花钱。恢复 8 点体质。",
+        tone: "",
+        run(){
+          healHP(8, "闭目养神");
+          finishSide("s_rest", "你整理了一夜", `<p>你把今天的每一笔支出写在纸上：寿命、体质、人情、恐惧。最后一项没法折成 CP。</p><p>天快亮时，你把纸烧了。灰落在洗手池里，像一小堆没算完的零钱。</p>`);
+        }
+      }
+    ];
+  }
+};
+
+SIDE_EVENTS.s_bank = {
+  id: "s_bank",
+  type: "支线 · 经营",
+  location: "代价银行 · 第三分理处 · 外勤",
+  title: "替葛四跑一趟",
+  repeatable: true,
+  cooldownDays: 1,
+  body(){
+    return `
+      <p>葛四把一张地址条拍在你桌上：“去，把王寡妇的 ${cpText(400)} 收回来。她儿子下个月要动手术，别听她哭。哭不算抵押物。”</p>
+      <p>地址条背面用铅笔写着一行小字：“抽三成，别让上面知道。”</p>
+      <p>你把地址条折好。窗外在下雨，雨点打在银行的铜字招牌上，像有人在敲一枚很薄的硬币。</p>
+    `;
+  },
+  options(){
+    return [
+      {
+        text: "按葛四的方法收。抽三成",
+        hint: `获得 ${cpText(280)}；银行债务 −100；体质 −10。`,
+        tone: "danger",
+        run(){
+          gainCP(280, "外勤抽成");
+          reduceBankDebt(100, "外勤抽成冲账");
+          state.suspicion = Math.min(5, state.suspicion + 1);
+          damageHP(10, "王寡妇用扫帚打了你的头");
+          finishSide("s_bank", "钱收回来了", `<p>你把 ${cpText(400)} 收回来，自己留了 ${cpText(280)}。王寡妇没有哭，她只是把儿子的病历折好，放回抽屉。</p><p>出门时你听见她在背后说：“你们这些人，早晚也要还。”</p>`);
+        }
+      },
+      {
+        text: "只收跑腿费，把剩下的记成坏账",
+        hint: `获得 ${cpText(120)}；银行债务 −200。`,
+        tone: "",
+        run(){
+          gainCP(120, "跑腿费");
+          reduceBankDebt(200, "坏账冲抵");
+          finishSide("s_bank", "坏账", `<p>你把 ${cpText(400)} 记成 ${cpText(200)} 坏账，自己拿了 ${cpText(120)} 跑腿费。葛四骂了你一顿，但没扣钱。</p><p>王寡妇送了你一袋橘子。你不知道该不该收。</p>`);
+        }
+      },
+      {
+        text: `自己垫 ${cpText(200)}，把她的账做平`,
+        hint: `支付 ${cpText(200)}；获得资产“王寡妇的人情”。`,
+        tone: "gold",
+        run(){
+          if (!spendCP(200, "替王寡妇垫付")) return;
+          addAsset({ label:"王寡妇的人情", type:"社会关系", value:90, desc:"她儿子在医院，欠你一条命。" });
+          finishSide("s_bank", "你垫了钱", `<p>你把 ${cpText(200)} 转进银行账户，把剩下的记成“困难减免”。葛四在电话里笑了很久：“你这种人，活不长。”</p><p>王寡妇不知道是你垫的。你也没打算让她知道。</p>`);
+        }
+      }
+    ];
+  }
+};
+
+/* ============================================================
+   6. 战斗卡牌 / 敌人 / 战斗逻辑
+   ============================================================ */
+const GENERAL_CARDS = [
+  { id:"g_strike1", name:"普通攻击", source:"general", cost:1, damage:9, desc:"用折叠刀或随手能拿到的硬物攻击。", flavor:"不体面，但便宜。" },
+  { id:"g_strike2", name:"普通攻击", source:"general", cost:1, damage:9, desc:"再打一下。账房也练过一点。", flavor:"重复劳动。" },
+  { id:"g_guard1", name:"防御", source:"general", cost:1, block:13, desc:"护住要害。本回合获得护甲。", flavor:"先保住能还债的部分。" },
+  { id:"g_guard2", name:"防御", source:"general", cost:1, block:13, desc:"护住要害。本回合获得护甲。", flavor:"再保一次。" },
+  { id:"g_talk", name:"交涉", source:"general", cost:1, effect:"negotiate", desc:"尝试用条款解决战斗。成功则敌人退场。", flavor:"语言也是一种武器，只是不扣 CP。" },
+  { id:"g_retreat", name:"撤退", source:"general", cost:1, effect:"retreat", desc:"尝试脱离战斗。失败会挨一下。", flavor:"三十六计，记账上叫止损。" }
+];
+
+const BATTLES = {
+  paperDog: {
+    id: "paperDog",
+    name: "纸犬",
+    title: "老周面馆 · 后巷",
+    desc: "一张被契约折成的狗。边角发黄，牙齿是订书钉。",
+    enemy: { name:"纸犬", hp:132, atk:11, will:12, aggression:4 },
+    intro: "纸犬从阴影里折出来，抖了抖身上的雨。它没有叫，只是把订书钉做的牙露了出来。",
+    help: "教学：每回合有 3 点行动力。眷属专属卡会实时扣除寿命（CP）。先防御，再用砚的“拆字”反击。",
+    tax: 0,
+    rewards: { cp:350, debt:300, asset:{ label:"老周的账本残页", type:"记忆", value:55, desc:"上面有姐姐的签名。" }, clue:null },
+    winText: "纸犬被拆回一张收据。老周蹲在门口，把欠款一分不少地转了过来。",
+    talkText: "老周把纸犬叫回柜台底下。你和他签了分期，纸犬自己缩成一张收据。",
+    loseText: "你被纸犬按在积水里。葛四派人把你捞起来，医药费从寿命里扣。"
+  },
+  hunter: {
+    id: "hunter",
+    name: "刻耳",
+    title: "废弃冷库 · 屋顶",
+    desc: "猎契人。腰上挂满装着眷属的玻璃瓶，手指上有契约剥离术留下的白痕。",
+    enemy: { name:"刻耳", hp:268, atk:16, will:16, aggression:20 },
+    intro: "刻耳把一只玻璃瓶在指间转了个圈。瓶子里有什么东西在撞壁。\n“最后问一次。契约，还是命？”",
+    help: "刻耳会在第 1 次行动时强行夺走你的一只眷属。你有 3 回合夺回窗口：杀死施术者，眷属回归；超时，永久消散并反噬。",
+    tax: 0,
+    capture: true,
+    rewards: { cp:600, debt:0, asset:{ label:"猎契人的铜牌", type:"社会关系", value:160, desc:"背面刻着第三金库的编号。" }, clue:{ id:"hunterTag", label:"猎契人铜牌：第三金库编号 17" } },
+    winText: "刻耳单膝跪地，腰上的玻璃瓶一个个裂开。雾从碎片里升起来，回到你的影子里。",
+    talkText: "刻耳听完你的条件，把玻璃瓶放回腰间。他没说同意，只是让开了路。",
+    loseText: "你被刻耳踩在屋顶边缘。他拿走了一份契约，像拿走一张过期的车票。"
+  },
+  scale: {
+    id: "scale",
+    name: "清算人·秤",
+    title: "第三金库 · 清算室",
+    desc: "由账页叠成的人形，胸口挂着一杆黄铜秤。她没有脸，但每一个数字都在看她。",
+    enemy: { name:"秤", hp:360, atk:20, will:20, aggression:8 },
+    intro: "秤抬起手。整间清算室的账页同时翻了一页。\n“逾期清算。请配合。”",
+    help: "秤每回合征收一小笔“代价税”。蓄力时下一击更重。她的血量低于一半会开闸，偷走你一大笔寿命。",
+    tax: 6,
+    rewards: { cp:900, debt:0, asset:{ label:"总账残页", type:"记忆", value:300, desc:"上面有姐姐的字。" }, clue:{ id:"vaultTruth", label:"总账残页：城市在偿还一笔世界级的债" } },
+    winText: "秤从中间裂开。账页像雪一样落下来，每一页都在落地前变成空白。",
+    talkText: "秤把黄铜秤放下。她第一次没有读出下一页账，也没有再提“逾期”两个字。",
+    loseText: "秤把你按在总账上。你的名字被写进“逾期”一栏，墨迹很新鲜。"
+  }
+};
+
+function buildDeck(){
+  const deck = GENERAL_CARDS.map(c => ({ ...c }));
+  for (const f of state.familiars){
+    if (f.status === "broken") continue;
+    for (const c of f.cards){
+      deck.push({ ...c, source:f.id, sourceName:f.name });
+    }
+  }
+  return shuffle(deck);
+}
+
+function startBattle(battleId, eventId, opts = {}){
+  if (!state || state.ending) return;
+  sceneLock = false;
+  const def = BATTLES[battleId];
+  if (!def) return;
+  const enemy = { ...def.enemy };
+  if (opts.enemyMod){
+    enemy.hp += opts.enemyMod.hp || 0;
+    enemy.atk += opts.enemyMod.atk || 0;
+  }
+  enemy.maxHp = enemy.hp;
+  const b = {
+    id: battleId,
+    eventId,
+    def,
+    enemy,
+    turn: 1,
+    phase: "player",
+    energy: CFG.ENERGY_PER_TURN,
+    maxEnergy: CFG.ENERGY_PER_TURN,
+    block: 0,
+    hand: [],
+    deck: buildDeck(),
+    discard: [],
+    log: [],
+    intent: null,
+    rewrite: { sourceId:null, targetId:null, turns:0 },
+    rewriteUsesLeft: CFG.REWRITE_USES_PER_BATTLE,
+    rewriteCooldown: 0,
+    capture: null,
+    stun: 0,
+    weaken: 0,
+    negotiateBuff: 0,
+    goldRushDone: false,
+    ended: false,
+    tax: def.tax || 0
+  };
+  state.battle = b;
+  state.currentEvent = null;
+  state.stats.battles += 1;
+  addLog(`战斗开始：${def.name}`, "story");
+  battleLog(def.intro, "sys");
+  refillHand();
+  setIntent();
+  renderAll();
+  scrollStageTop();
+  if (b.help || def.help) toast("这是战斗。先看手牌，再决定要不要花代价。");
+}
+
+function battleLog(text, type = ""){
+  if (!state || !state.battle) return;
+  const lines = String(text).split("\n");
+  for (const line of lines){
+    if (!line.trim()) continue;
+    state.battle.log.push({ text: line, type });
+  }
+  if (state.battle.log.length > 60) state.battle.log.shift();
+}
+
+function refillHand(){
+  const b = state.battle;
+  if (!b) return;
+  while (b.hand.length < CFG.HAND_SIZE){
+    if (!b.deck.length){
+      if (!b.discard.length) break;
+      b.deck = shuffle(b.discard);
+      b.discard = [];
+    }
+    b.hand.push(b.deck.pop());
+  }
+}
+
+function drawCards(n){
+  const b = state.battle;
+  if (!b) return;
+  for (let i = 0; i < n; i++){
+    if (!b.deck.length){
+      if (!b.discard.length) break;
+      b.deck = shuffle(b.discard);
+      b.discard = [];
+    }
+    if (b.deck.length) b.hand.push(b.deck.pop());
+  }
+}
+
+function setIntent(){
+  const b = state.battle;
+  if (!b) return;
+  if (b.stun > 0){
+    b.intent = { type:"stunned", damage:0, text:"行动暂缓（再等一个工作日）" };
+    return;
+  }
+  if (b.def.capture && !b.capture && b.turn >= 2){
+    b.intent = { type:"capture", damage:8, text:"契夺：强行剥离一只眷属" };
+    return;
+  }
+  const t = b.turn;
+  if (b.id === "scale"){
+    if (t % 3 === 0){
+      b.intent = { type:"heavy", damage: b.enemy.atk + 12, text:`清算：${b.enemy.atk + 12} 伤害 + 代价税` };
+    } else {
+      b.intent = { type:"attack", damage: b.enemy.atk, text:`普通攻击：${b.enemy.atk} 伤害 + 代价税` };
+    }
+  } else if (b.id === "hunter"){
+    if (t % 4 === 0){
+      b.intent = { type:"heavy", damage: b.enemy.atk + 8, text:`剥离斩：${b.enemy.atk + 8} 伤害` };
+    } else {
+      b.intent = { type:"attack", damage: b.enemy.atk, text:`攻击：${b.enemy.atk} 伤害` };
+    }
+  } else {
+    if (t % 3 === 0){
+      b.intent = { type:"heavy", damage: b.enemy.atk + 5, text:`撕咬：${b.enemy.atk + 5} 伤害` };
+    } else {
+      b.intent = { type:"attack", damage: b.enemy.atk, text:`撕咬：${b.enemy.atk} 伤害` };
+    }
+  }
+  if (b.weaken > 0) b.intent.damage = Math.max(0, b.intent.damage - 4);
+}
+
+function cardAvailable(card){
+  const b = state.battle;
+  if (!b || b.phase !== "player") return { ok:false, reason:"不是你的回合" };
+  if (card.cost > b.energy) return { ok:false, reason:"行动力不足" };
+  if (card.source && card.source !== "general"){
+    const f = getFamiliar(card.source);
+    if (!f) return { ok:false, reason:"眷属已离场" };
+    if (f.status === "broken") return { ok:false, reason:"契约已断裂" };
+    if (f.status === "berserk") return { ok:false, reason:"眷属暴走，无法指挥" };
+    if (b.capture && b.capture.familiarId === f.id) return { ok:false, reason:"眷属已被刻耳夺走" };
+    if (famRatio(f) < CFG.LOW_TOLERANCE) return { ok:false, reason:"代价低于下限，眷属拒绝出战" };
+    if (card.burst > 0){
+      const moved = b.rewrite.turns > 0 && b.rewrite.sourceId === f.id;
+      if (!moved && state.player.lifespanCP < card.burst){
+        return { ok:false, reason:"剩余寿命不足以支付爆发代价" };
+      }
+    }
+  }
+  return { ok:true, reason:"" };
+}
+
+function familiarCardFactor(f){
+  return famPowerFactor(f) * weakMultiplier(f);
+}
+
+function playCard(index){
+  const b = state.battle;
+  if (!b || b.phase !== "player" || b.ended) return;
+  const card = b.hand[index];
+  if (!card) return;
+  const avail = cardAvailable(card);
+  if (!avail.ok){
+    toast(avail.reason, "loss");
+    return;
+  }
+  b.energy -= card.cost;
+  b.hand.splice(index, 1);
+
+  let fam = card.source && card.source !== "general" ? getFamiliar(card.source) : null;
+
+  /* 爆发代价 / 临时改写 */
+  if (card.burst && fam){
+    if (b.rewrite.turns > 0 && b.rewrite.sourceId === fam.id){
+      const target = getFamiliar(b.rewrite.targetId);
+      if (target && target.status !== "broken"){
+        const move = roundHalf(Math.min(card.burst, fam.C));
+        fam.C = roundHalf(fam.C - move);
+        target.C = roundHalf(target.C + move);
+        fam.battleShift = roundHalf((fam.battleShift || 0) - move);
+        target.battleShift = roundHalf((target.battleShift || 0) + move);
+        battleLog(`临时改写：${fam.name} 的 ${cpText(card.burst)} 代价暂时记在 ${target.name} 账上。`, "sys");
+        addLog(`临时改写：${fam.name} → ${target.name}，${cpText(move)}。`, "story");
+        refreshFamiliarStates();
+        if (target.C > target.S * CFG.HIGH_TOLERANCE + 0.0001){
+          battleLog(`${target.name} 的代价越过上限。她的账页开始自己翻动。`, "hit");
+          openBerserkRoll(target, (survived) => {
+            if (!survived) return;
+            target.status = "berserk";
+            battleLog(`${target.name} 暴走。她不再区分敌我。`, "hit");
+            renderAll();
+          }, "battle");
+        }
+      }
+    } else {
+      if (state.player.lifespanCP < card.burst){
+        b.energy += card.cost;
+        b.hand.splice(index, 0, card);
+        toast("剩余寿命不足以支付爆发代价", "loss");
+        return;
+      }
+      spendCP(card.burst, `${fam.name}的爆发代价`);
+      if (state.ending) return;
+    }
+  }
+
+  /* 普通伤害 */
+  if (card.damage){
+    let dmg = card.damage;
+    if (fam){
+      dmg = Math.round(card.damage * familiarCardFactor(fam));
+      if (card.id === "wu_pounce" || card.id === "wu_void"){
+        damageHP(card.selfHp || 0, `${fam.name}的反震`);
+        if (state.ending) return;
+      }
+    }
+    if (b.weaken > 0) dmg = Math.max(1, dmg);
+    b.enemy.hp = Math.max(0, b.enemy.hp - dmg);
+    battleLog(`${card.name} 命中 ${b.enemy.name}，造成 ${dmg} 伤害。`, "good");
+    if (fam) battleLog(`${fam.name} 的爆发代价从账上划走：${cpText(card.burst)}。`, "sys");
+  }
+
+  /* 护甲 */
+  if (card.block){
+    b.block += Math.round(card.block * (fam ? Math.max(0.8, familiarCardFactor(fam)) : 1));
+    battleLog(`你获得 ${b.block} 点护甲。`, "good");
+  }
+
+  /* 特殊效果 */
+  if (card.effect === "weaken"){
+    b.weaken = 2;
+    battleLog("冷读成功：敌人下一次攻击伤害 −4。", "good");
+  }
+  if (card.effect === "negotiateBuff"){
+    b.negotiateBuff += 3;
+    battleLog("代笔完成：本场战斗交涉判定 +3。", "good");
+  }
+  if (card.effect === "enemyAtkDown"){
+    b.enemy.atk = Math.max(1, b.enemy.atk - 4);
+    setIntent();
+    battleLog(`条款驳斥成功：${b.enemy.name} 攻击力 −4。`, "good");
+  }
+  if (card.effect === "stun"){
+    b.stun += 1;
+    battleLog("暂缓执行：敌人的下一次行动被推迟。", "good");
+  }
+  if (card.draw) drawCards(card.draw);
+  if (card.energy) b.energy += card.energy;
+
+  if (card.effect === "negotiate"){
+    resolveNegotiate();
+    if (b.ended) return;
+  }
+  if (card.effect === "retreat"){
+    resolveRetreat();
+    if (b.ended) return;
+  }
+
+  b.discard.push(card);
+  if (b.enemy.hp <= 0){ winBattle(); return; }
+  refreshFamiliarStates();
+  renderAll();
+}
+
+function resolveNegotiate(){
+  const b = state.battle;
+  const roll = randInt(1, 20);
+  const total = roll + effectiveNegotiation() + b.negotiateBuff;
+  const dc = b.enemy.will;
+  battleLog(`交涉判定：d20(${roll}) + ${effectiveNegotiation() + b.negotiateBuff} = ${total}，目标 ${dc}。`, "sys");
+  if (total >= dc){
+    battleLog("对方接受了你的条款。战斗结束。", "good");
+    b.enemy.hp = 0;
+    b.negotiated = true;
+    winBattle(true);
+  } else {
+    battleLog("对方拒绝签字。", "hit");
+  }
+}
+
+function resolveRetreat(){
+  const b = state.battle;
+  const success = Math.random() < 0.55;
+  battleLog(`撤退判定：${success ? "成功" : "失败"}。`, "sys");
+  if (success){
+    endBattle("retreat");
+  } else {
+    const dmg = Math.max(4, Math.round(b.enemy.atk * 0.6));
+    damageHP(dmg, "撤退失败，挨了一下");
+    battleLog(`撤退失败，你受到 ${dmg} 点伤害。`, "hit");
+    if (state.ending) return;
+  }
+}
+
+function endTurn(){
+  const b = state.battle;
+  if (!b || b.phase !== "player" || b.ended) return;
+  b.phase = "enemy";
+  b.discard.push(...b.hand);
+  b.hand = [];
+  renderAll();
+
+  /* 暴走眷属先动 */
+  for (const f of state.familiars){
+    if (f.status !== "berserk") continue;
+    if (Math.random() < 0.5){
+      const dmg = Math.max(6, Math.round(famPower(f) * 0.35));
+      damageHP(dmg, `${f.name}暴走，攻击了你`);
+      battleLog(`${f.name} 暴走，咬向离她最近的人——你。${dmg} 伤害。`, "hit");
+    } else {
+      const dmg = Math.max(8, Math.round(famPower(f) * 0.5));
+      b.enemy.hp = Math.max(0, b.enemy.hp - dmg);
+      battleLog(`${f.name} 暴走，扑向 ${b.enemy.name}。${dmg} 伤害。`, "good");
+    }
+    if (state.ending) return;
+    if (b.enemy.hp <= 0){ winBattle(); return; }
+  }
+
+  setTimeout(() => enemyTurn(), 420);
+}
+
+function enemyTurn(){
+  if (!state) return;
+  const b = state.battle;
+  if (!b || b.ended || state.ending) return;
+
+  /* 代价税 */
+  if (b.tax > 0){
+    if (state.player.lifespanCP >= b.tax){
+      spendCP(b.tax, "清算人的代价税", { silent:true });
+      battleLog(`代价税：${cpText(b.tax)} 被划走。`, "sys");
+    } else {
+      damageHP(10, "无力支付代价税");
+      battleLog("你付不出代价税。秤从你的体质里扣。", "hit");
+    }
+    if (state.ending) return;
+  }
+
+  /* 敌方被眩晕 */
+  if (b.stun > 0){
+    b.stun -= 1;
+    battleLog(`${b.enemy.name} 的行动被暂缓。`, "good");
+    setIntent();
+    nextPlayerTurn();
+    return;
+  }
+
+  /* 契约断裂：夺回窗口 */
+  if (b.capture){
+    const cap = b.capture;
+    const f = getFamiliar(cap.familiarId);
+    if (f){
+      const gain = 14 + (f.aggression || 0) + randInt(0, 22) + Math.floor((60 - f.loyalty) / 5);
+      cap.betrayal = Math.min(100, cap.betrayal + gain);
+      battleLog(`${f.name} 在契链里挣扎。反水值 +${gain}（${cap.betrayal}/100）。`, "sys");
+      cap.window -= 1;
+      if (cap.betrayal >= 100){
+        // 反水，攻击敌方，契约回归
+        const dmg = Math.max(20, Math.round(famPower(f) * 0.6));
+        b.enemy.hp = Math.max(0, b.enemy.hp - dmg);
+        b.capture = null;
+        battleLog(`${f.name} 挣断契链，反身咬向 ${b.enemy.name}！${dmg} 伤害。她回到了你身边。`, "good");
+        addLog(`${f.name} 在夺回窗口内反水，重创猎契人并回归。`, "gain");
+        f.loyalty = Math.min(100, f.loyalty + 6);
+        if (b.enemy.hp <= 0){ winBattle(); return; }
+        attackPlayer();
+        if (b.ended || state.ending) return;
+        nextPlayerTurn();
+        return;
+      }
+      if (cap.window <= 0){
+        // 超时：永久消散 + 反噬
+        battleLog(`夺回窗口关闭。契链绞紧，${f.name} 的轮廓开始散。`, "hit");
+        f.status = "broken";
+        state.familiars = state.familiars.filter(x => x.id !== f.id);
+        b.capture = null;
+        addLog(`${f.name} 永久消散。契约断裂。`, "loss");
+        spendCP(800, "契约断裂反噬");
+        damageHP(22, "契约断裂反噬");
+        const lost = loseRandomAsset("契约断裂反噬");
+        if (lost) battleLog(`反噬夺走了：${lost.label}。`, "hit");
+        if (state.ending) return;
+        attackPlayer();
+        if (b.ended || state.ending) return;
+        nextPlayerTurn();
+        return;
+      }
+      battleLog(`夺回窗口还剩 ${cap.window} 回合。`, "hit");
+      attackPlayer(0.6);
+      if (b.ended || state.ending) return;
+      nextPlayerTurn();
+      return;
+    } else {
+      b.capture = null;
+    }
+  }
+
+  /* 猎契人的强夺 */
+  if (b.def.capture && b.turn >= 2 && !b.capture && !b.captureDone){
+    const candidates = state.familiars.filter(f => f.status !== "broken");
+    if (candidates.length){
+      const target = candidates.sort((a,b) => famPower(b) - famPower(a))[0];
+      b.capture = { familiarId: target.id, window: 3, betrayal: 0 };
+      b.captureDone = true;
+      state.stats.captured += 1;
+      battleLog(`刻耳撕开一道契链，强行拽走了 ${target.name}。夺回窗口：3 回合。`, "hit");
+      addLog(`刻耳强夺 ${target.name}。3 回合内杀死施术者，眷属可回归。`, "loss");
+      attackPlayer(0.5);
+      if (b.ended || state.ending) return;
+      nextPlayerTurn();
+      return;
+    }
+  }
+
+  attackPlayer();
+  if (b.ended || state.ending) return;
+
+  /* 半血开闸 */
+  if (b.id === "scale" && !b.goldRushDone && b.enemy.hp <= b.enemy.maxHp * 0.5){
+    b.goldRushDone = true;
+    const steal = Math.min(500, state.player.lifespanCP);
+    if (steal > 0){
+      state.player.lifespanCP = roundHalf(state.player.lifespanCP - steal);
+      state.stats.spentCP = roundHalf(state.stats.spentCP + steal);
+      addLog(`金库开闸：${cpText(steal)} 被抽走。`, "loss");
+      battleLog(`金库开闸。你感到寿命被整段撕走：${cpText(steal)}。`, "hit");
+      toast(`金库开闸 −${cpText(steal)}`, "loss");
+      if (state.player.lifespanCP <= 0){
+        endGame("death_balance");
+        return;
+      }
+    }
+    b.enemy.hp = Math.min(b.enemy.maxHp, b.enemy.hp + 30);
+    battleLog("秤吞下一叠账页，恢复了 30 点生命。", "hit");
+  }
+
+  nextPlayerTurn();
+}
+
+function attackPlayer(mult = 1){
+  const b = state.battle;
+  if (!b) return;
+  let dmg = Math.max(0, Math.round((b.intent ? b.intent.damage : b.enemy.atk) * mult));
+  if (b.weaken > 0){
+    dmg = Math.max(0, dmg - 4);
+    b.weaken -= 1;
+  }
+  const blocked = Math.min(b.block, dmg);
+  b.block = Math.max(0, b.block - blocked);
+  const real = Math.max(0, dmg - blocked);
+  if (real > 0){
+    damageHP(real, `${b.enemy.name}的攻击`);
+    battleLog(`${b.enemy.name} 造成 ${dmg} 伤害，护甲吸收 ${blocked}，你受到 ${real}。`, "hit");
+  } else {
+    battleLog(`${b.enemy.name} 的攻击被护甲挡下。`, "good");
+  }
+  if (state.ending) return;
+}
+
+function nextPlayerTurn(){
+  const b = state.battle;
+  if (!b || b.ended || state.ending) return;
+  b.turn += 1;
+  b.phase = "player";
+  b.energy = b.maxEnergy;
+  b.block = 0;
+  if (b.rewriteCooldown > 0) b.rewriteCooldown -= 1;
+  if (b.rewrite.turns > 0){
+    b.rewrite.turns -= 1;
+    if (b.rewrite.turns <= 0){
+      b.rewrite.sourceId = null;
+      b.rewrite.targetId = null;
+      battleLog("临时改写到期。代价账目回到原来的名字下面。", "sys");
+    }
+  }
+  refillHand();
+  setIntent();
+  refreshFamiliarStates();
+  renderAll();
+}
+
+function winBattle(negotiated = false){
+  const b = state.battle;
+  if (!b || b.ended) return;
+  b.ended = true;
+  b.phase = "won";
+  state.stats.wins += 1;
+  addLog(`战斗胜利：${b.def.name}${negotiated ? "（交涉）" : ""}`, "gain");
+  const rewards = b.def.rewards || {};
+  if (negotiated){
+    const half = roundHalf((rewards.cp || 0) / 2);
+    if (half) gainCP(half, "交涉解决");
+    if (rewards.clue) addClue(rewards.clue.id, rewards.clue.label);
+    if (b.id === "scale"){
+      // 即使是被条款劝退，也算越过了清算人这一关。
+      state.player.flags.bossDefeated = true;
+      state.player.flags.knowsScale = true;
+      addClue("scaleTruth", "清算人：金库在喂养一个没有契主的异质");
+    }
+    if (b.id === "hunter") state.player.flags.hunterDefeated = true;
+    finishBattleWin(b, true);
+    return;
+  }
+  if (rewards.cp) gainCP(rewards.cp, "战斗结算");
+  if (rewards.debt) reduceBankDebt(rewards.debt, "战斗结算");
+  if (rewards.asset) addAsset(rewards.asset);
+  if (rewards.clue) addClue(rewards.clue.id, rewards.clue.label);
+  if (b.id === "scale"){
+    state.player.flags.bossDefeated = true;
+    state.player.flags.knowsScale = true;
+    addClue("scaleTruth", "清算人：金库在喂养一个没有契主的异质");
+  }
+  if (b.id === "hunter"){
+    state.player.flags.hunterDefeated = true;
+  }
+  finishBattleWin(b, false);
+}
+
+function finishBattleWin(b, negotiated){
+  const eventId = b.eventId;
+  const def = b.def;
+  // 临时改写回滚
+  for (const f of state.familiars){
+    if (f.battleShift){
+      f.C = roundHalf(f.C - f.battleShift);
+      f.battleShift = 0;
+    }
+  }
+  refreshFamiliarStates();
+  const capName = b.capture ? getFamiliar(b.capture.familiarId)?.name : null;
+  state.battle = null;
+  if (eventId && EVENTS[eventId] && !state.completed[eventId]){
+    completeEvent(eventId, {
+      stamp: negotiated ? "交涉结案" : "战斗结算",
+      title: negotiated ? "没有见血" : "你赢了这一场",
+      body: `<p>${esc((negotiated && def.talkText) ? def.talkText : (def.winText || "战斗结束。"))}</p>${capName ? `<p>${esc(capName)} 从契链里挣脱出来，回到你的影子里。她没说话，只是把牙齿收了起来。</p>` : ""}${negotiated ? "<p>你用条款代替了拳头。账面干净，但对方记得你的脸。</p>" : "<p>你检查了一遍账本：寿命、契约、债务，每一项都还在。你还没破产。</p>"}`
+    });
+  } else {
+    renderAll();
+  }
+}
+
+function endBattle(reason){
+  const b = state.battle;
+  if (!b || b.ended) return;
+  b.ended = true;
+  // 回滚
+  for (const f of state.familiars){
+    if (f.battleShift){
+      f.C = roundHalf(f.C - f.battleShift);
+      f.battleShift = 0;
+    }
+  }
+  refreshFamiliarStates();
+  const eventId = b.eventId;
+  const def = b.def;
+  const captured = b.capture ? getFamiliar(b.capture.familiarId) : null;
+  state.battle = null;
+  if (reason === "retreat"){
+    addLog(`撤离战斗：${def.name}`, "story");
+    if (captured){
+      // 撤退不等于夺回：契链还在刻耳手里。
+      captured.status = "broken";
+      state.familiars = state.familiars.filter(f => f.id !== captured.id);
+      addLog(`你撤了。${captured.name} 没能离开契链，永久消散。`, "loss");
+      spendCP(800, "撤退导致契约断裂");
+      if (state.ending) return;
+      damageHP(22, "契约断裂反噬");
+      if (state.ending) return;
+      const lost = loseRandomAsset("契约断裂反噬");
+      if (eventId && EVENTS[eventId] && !state.completed[eventId]){
+        completeEvent(eventId, {
+          stamp: "撤离 · 契约断裂",
+          title: `你把 ${captured.name} 留在了屋顶`,
+          body: `<p>你退进楼梯间，身后的契链发出一声很轻的、像纸被撕开的响动。你没有回头。</p><p>${esc(captured.name)} 没有跟上来。契约在你胸口断开，像一根被抽走的肋骨。</p>${lost ? `<p>反噬顺手拿走了你身上的 ${esc(lost.label)}。</p>` : ""}<p>你保住了命，但没有保住她。这件事被你记成了“待处理”，你知道自己不会再处理。</p>`
+        });
+      } else {
+        renderAll();
+      }
+      return;
+    }
+    if (eventId && EVENTS[eventId] && !state.completed[eventId]){
+      completeEvent(eventId, {
+        stamp: "撤离",
+        title: "你选择了止损",
+        body: `<p>你退进阴影里。${esc(def.name)} 没有追出来，可能是不屑，也可能是还有别的账要收。</p><p>你保住了命，也保住了契约。但这件事没有结束，只是被你记成了“待处理”。</p>`
+      });
+    } else {
+      renderAll();
+    }
+  } else {
+    addLog(`战斗失败：${def.name}`, "loss");
+    if (state.player.hp <= 0 || state.player.lifespanCP <= 0){
+      // endGame 已在 damage/spend 中触发
+      return;
+    }
+    if (eventId && EVENTS[eventId] && !state.completed[eventId]){
+      completeEvent(eventId, {
+        stamp: "战斗失败",
+        title: "你被抬出了场",
+        body: `<p>${esc(def.loseText || "你输掉了这场战斗。")}</p><p>你醒来时，有人在翻你的口袋。你数了数还剩的寿命，决定先不睁眼。</p>`
+      });
+    } else {
+      renderAll();
+    }
+  }
+}
+
+/* 暴走掷骰：d20 > 固定数 存活 */
+function berserkThreshold(f){
+  return clamp(8 + Math.floor((f.aggression || 10) / 3), 8, 17);
+}
+
+function openBerserkRoll(f, callback, context = "sign"){
+  if (!f) return;
+  state.stats.berserkRolls += 1;
+  const threshold = berserkThreshold(f);
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">CONTRACT OVERFLOW</div><h2 class="modal-title">${esc(f.name)} 的条款越界了</h2></div>
+    </div>
+    <div class="modal-body">
+      <p>${esc(f.form)}</p>
+      <p>你支付的代价越过了她能承受的上限。契约正在从边缘裂开。她的瞳孔里出现了一种不属于人的算术。</p>
+      <div class="dossier">
+        <div class="row"><span>眷属</span><b>${esc(f.name)}</b></div>
+        <div class="row"><span>性格</span><b>${esc(f.personality)}</b></div>
+        <div class="row"><span>存活判定</span><b>d20 &gt; ${threshold}</b></div>
+        <div class="row"><span>失败</span><b class="warn">死亡</b></div>
+      </div>
+      <div class="dice-box" id="dice-box">
+        <div class="dice-face" id="dice-face">?</div>
+        <div class="dice-note">掷出超过 ${threshold} 的点数，才能活着被放过。</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn danger" data-modal-action="roll-berserk" data-fid="${esc(f.id)}" data-threshold="${threshold}">掷骰</button>
+      </div>
+    </div>`;
+  openModal(body, "wide", true);
+  const btn = $('[data-modal-action="roll-berserk"]');
+  if (btn){
+    btn.addEventListener("click", () => {
+      const roll = randInt(1, CFG.BERSERK_DIE);
+      const face = $("#dice-face");
+      if (face) face.textContent = roll;
+      const survived = roll > threshold;
+      addLog(`暴走判定：d20=${roll}，需 > ${threshold}，${survived ? "存活" : "死亡"}。`, survived ? "story" : "loss");
+      setTimeout(() => {
+        closeModal();
+        if (!survived){
+          endGame("death_berserk", { familiar:f.name, roll, threshold });
+          return;
+        }
+        spendCP(500, "暴走后的赔偿");
+        if (state.ending) return;
+        if (callback) callback(true);
+      }, 700);
+    }, { once:true });
+  }
+}
+
+/* ============================================================
+   7. 事件流转 / 日程
+   ============================================================ */
+const MAIN_ORDER = ["m01","m02","m03","m04","m05","m06","m07","m08","m09","m10","m11","m12"];
+const AUTO_EVENTS = ["m06","m11"];
+
+function getNextMain(){
+  if (!state) return null;
+  for (const id of MAIN_ORDER){
+    if (AUTO_EVENTS.includes(id)) continue;
+    // 中段天赋丢失是主线必经节点：在那之前不提前放出后续签约。
+    if (id === "m07" && !state.completed.m06) return null;
+    if (id === "m12"){
+      if (!state.revealed) continue;
+      if (!state.completed.m12) return EVENTS.m12;
+      continue;
+    }
+    if (!state.completed[id]) return EVENTS[id];
+  }
+  return null;
+}
+
+function sideAvailable(id){
+  const ev = SIDE_EVENTS[id];
+  if (!ev) return false;
+  if (!ev.repeatable && state.completed[id]) return false;
+  const cd = state.eventCooldowns[id];
+  if (cd && state.day < cd) return false;
+  return true;
+}
+
+function openEvent(id, opts = {}){
+  if (!state || state.ending || state.battle) return;
+  if (state.currentEvent && !opts.force) return;
+  const ev = EVENTS[id] || SIDE_EVENTS[id];
+  if (!ev) return;
+  const free = opts.free || ev.free || ev.id === "m01";
+  if (!free){
+    if (state.ap <= 0){
+      toast("今天的行动点用完了。回旅馆结账，或者直接结束今天。", "loss");
+      return;
+    }
+    state.ap -= 1;
+  }
+  state.currentEvent = id;
+  state.pendingOutcome = null;
+  if (id === "m01"){
+    // 初始提示只显示一次
+  }
+  renderAll();
+  scrollStageTop();
+}
+
+function completeEvent(id, outcome){
+  if (!state) return;
+  const ev = EVENTS[id] || SIDE_EVENTS[id];
+  if (!ev) return;
+  if (ev.once || !ev.repeatable) state.completed[id] = true;
+  if (ev.repeatable && ev.cooldownDays){
+    state.eventCooldowns[id] = state.day + ev.cooldownDays;
+  }
+  state.currentEvent = null;
+  state.pendingOutcome = { ...outcome, eventId:id };
+  renderAll();
+  scrollStageTop();
+}
+
+function finishSide(id, title, body){
+  completeEvent(id, {
+    stamp: "支线结算",
+    title,
+    body
+  });
+}
+
+function continueAfterOutcome(){
+  if (!state) return;
+  state.pendingOutcome = null;
+  if (triggerAutoEvents()) return;
+  showHub();
+}
+
+function triggerAutoEvents(){
+  if (!state || state.ending || state.battle || state.currentEvent || state.pendingOutcome) return false;
+  if (state.day >= 6 && !state.completed.m06){
+    openEvent("m06", { free:true, force:true });
+    return true;
+  }
+  if (state.day >= state.countdownEndDay && !state.completed.m11){
+    openEvent("m11", { free:true, force:true });
+    return true;
+  }
+  return false;
+}
+
+function showHub(){
+  if (!state || state.ending || state.battle) return;
+  state.currentEvent = null;
+  state.pendingOutcome = null;
+  renderAll();
+  scrollStageTop();
+}
+
+function endDay(){
+  if (!state || state.ending || state.battle || state.currentEvent || state.pendingOutcome) return;
+  const upkeep = calcUpkeep();
+  const bankFee = CFG.DAILY_BANK_FEE;
+  const total = roundHalf(upkeep + bankFee);
+  if (total > 0){
+    if (state.player.lifespanCP < total){
+      // 先扣到 0，触发死亡
+      spendCP(state.player.lifespanCP, "常驻代价与银行渠道费");
+      if (state.ending) return;
+    } else {
+      spendCP(total, "常驻契约与银行渠道费");
+      if (state.ending) return;
+    }
+  }
+  state.day += 1;
+  state.ap = state.maxAp;
+  state.player.hp = Math.min(state.player.maxHp, state.player.hp + 6);
+  addLog(`第 ${state.day} 日。日常结算：${cpText(total)}（常驻 ${cpText(upkeep)} + 渠道 ${cpText(bankFee)}）。`, "story");
+  if (state.day === 8){
+    state.bankDebt = roundHalf(state.bankDebt + 900);
+    addLog(`季度核账：银行债务增加 ${cpText(900)}。`, "loss");
+    toast(`季度核账：银行债务 +${cpText(900)}`, "loss");
+  }
+  addLog(`—— 第 ${state.day} 日 ——`, "story");
+  renderAll();
+  if (triggerAutoEvents()) return;
+  scrollStageTop();
+}
+
+/* ============================================================
+   8. 签约流程
+   ============================================================ */
+function openSignOne(){
+  if (!state.player.precisionMode){
+    openSignOneFuzzy();
+    return;
+  }
+  const S = 300;
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">CONTRACT DRAFT · 01</div><h2 class="modal-title">砚的契约草案</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>她把墨水笔放在桌上，笔尖没有蘸墨，却在纸上留下一个精确到 0.5 的数字。</p>
+      <div class="sign-terms">
+        <div class="sign-row"><span>常驻周期</span><b>30 日</b></div>
+        <div class="sign-row"><span>条款 A · 色觉</span><b>30 CP / 月（1 CP / 天）</b></div>
+        <div class="sign-row"><span>条款 B · 寿命分摊</span><b id="sign-life">270 CP / 月</b></div>
+        <div class="sign-row"><span>满功率代价 S</span><b>300 CP</b></div>
+        <div class="sign-row"><span>容差区间</span><b>240 – 390 CP</b></div>
+        <div class="sign-row sign-total"><span>你选择支付 C</span><b id="sign-total">300 CP</b></div>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-top"><label for="sign-slider">拖动，决定每月付多少</label><output id="sign-output">300 CP</output></div>
+        <input id="sign-slider" type="range" min="180" max="420" step="0.5" value="300">
+        <div class="range-labels"><span>180</span><span>240 下限</span><span>300 满功率</span><span>390 上限</span><span>420</span></div>
+      </div>
+      <div class="verdict" id="sign-verdict"></div>
+      <p class="tiny muted" style="margin-top:12px">每日常驻扣除 = C ÷ 30。差额会从寿命中实时划走。你可以在签约后拆分条款，但拆出的碎片不可再拆。</p>
+      <div class="modal-actions">
+        <button class="btn ghost" data-modal-action="close">再想想</button>
+        <button class="btn primary" data-modal-action="sign-one">签字</button>
+      </div>
+    </div>`;
+  openModal(body, "wide");
+  const slider = $("#sign-slider");
+  const update = () => {
+    const c = Number(slider.value);
+    $("#sign-life").textContent = num(c - 30) + " CP / 月";
+    $("#sign-output").textContent = num(c) + " CP";
+    $("#sign-total").textContent = num(c) + " CP";
+    const v = $("#sign-verdict");
+    let cls = "verdict", txt = "";
+    if (c < 240){
+      cls += " bad";
+      txt = "她看了一眼数字，把笔收回去。低于她能接受的固定区间下限。契约不会成立。";
+    } else if (c < 300){
+      cls += " warn";
+      txt = `契约成立。战力按 C/S 衰减：约 ${pc(c / 300)}。她不太满意，但会留下。每日约 ${cpText(c / 30)}。`;
+    } else if (c > 300 && c < 390){
+      cls += " warn";
+      txt = `契约成立，满功率。多付的 ${cpText(c - 300)} 不会返还。每日约 ${cpText(c / 30)}。`;
+    } else if (c === 300){
+      cls += " warn";
+      txt = `契约成立，刚好满功率。每日约 ${cpText(c / 30)}。`;
+    } else if (c <= 390){
+      cls += " warn";
+      txt = "刚好压在上限。契约仍在，满功率，多付的部分白给。她开始重新评估你。";
+    } else {
+      cls += " bad";
+      txt = "越过上限。契约可能作废，她可能暴走。你最好知道自己在做什么。";
+    }
+    v.className = cls;
+    v.textContent = txt;
+  };
+  slider.addEventListener("input", update);
+  update();
+  $('[data-modal-action="sign-one"]').addEventListener("click", () => {
+    finalizeSignOne(Number(slider.value));
+  });
+}
+
+function openSignOneFuzzy(){
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">CONTRACT DRAFT · 01 / BLURRED</div><h2 class="modal-title">砚的契约草案</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>你看着她推过来的纸。数字还在，但边缘已经糊了。你只能凭经验估出三个档位，没法确认自己是不是刚好踩在满功率上。</p>
+      <div class="sign-terms">
+        <div class="sign-row"><span>她的常驻要求</span><b>约 240–360 CP / 月</b></div>
+        <div class="sign-row"><span>你的精度</span><b class="red">区间估值 ±18%</b></div>
+        <div class="sign-row"><span>每日常驻</span><b>约 8–12 CP</b></div>
+      </div>
+      <div class="tier-list">
+        <button class="tier" data-modal-action="sign-one-fuzzy" data-c="250">
+          <b>压着下限签</b><span>少付一点，赌她愿意留下。她可能会虚弱。</span>
+        </button>
+        <button class="tier" data-modal-action="sign-one-fuzzy" data-c="300">
+          <b>按她说的价签</b><span>最稳妥的选择。你猜这大概就是满功率。</span>
+        </button>
+        <button class="tier" data-modal-action="sign-one-fuzzy" data-c="360">
+          <b>主动加码</b><span>多付一些，买她一个不走的理由。多出的部分不会找零。</span>
+        </button>
+      </div>
+      <div class="modal-actions"><button class="btn ghost" data-modal-action="close">再想想</button></div>
+    </div>`;
+  openModal(body, "wide");
+  $$('[data-modal-action="sign-one-fuzzy"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      finalizeSignOne(Number(btn.dataset.c));
+    });
+  });
+}
+
+function finalizeSignOne(C){
+  C = roundHalf(clamp(C, 180, 420));
+  const S = 300;
+  closeModal();
+  const ratio = C / S;
+  if (ratio < CFG.LOW_TOLERANCE){
+    spendCP(100, "谈判失败，茶水钱");
+    if (state.ending) return;
+    state.currentEvent = null;
+    state.pendingOutcome = {
+      stamp: "契约未成立",
+      title: "她走了",
+      body: `<p>砚把笔收回袖口，站起来。她走之前看了你一眼：“你连自己愿意付多少都不知道。这样的人，签不了我。”</p><p>桌上只剩两杯冷茶和一张空白草稿。你损失了一点“茶水钱”，但至少她还愿意下次再谈。</p>`
+    };
+    renderAll();
+    return;
+  }
+  if (ratio > CFG.HIGH_TOLERANCE){
+    spendCP(200, "契约反噬");
+    if (state.ending) return;
+    const temp = makeFamiliar("yan", C, {
+      clauses:[
+        { id:"yan_sight", type:"感官", label:"色觉", costCP:30, isSplit:false, splitFrom:null, active:true },
+        { id:"yan_life", type:"寿命", label:"寿命分摊", costCP:roundHalf(C - 30), isSplit:false, splitFrom:null, active:true }
+      ]
+    });
+    state.currentEvent = null;
+    state.pendingOutcome = null;
+    openBerserkRoll(temp, (survived) => {
+      state.currentEvent = "m02";
+      renderAll();
+    }, "sign");
+    return;
+  }
+  const f = makeFamiliar("yan", C, {
+    clauses:[
+      { id:"yan_sight", type:"感官", label:"色觉", costCP:30, isSplit:false, splitFrom:null, active:true },
+      { id:"yan_life", type:"寿命", label:"寿命分摊", costCP:roundHalf(C - 30), isSplit:false, splitFrom:null, active:true }
+    ]
+  });
+  state.familiars.push(f);
+  state.player.flags.signedYan = true;
+  addLog(`与砚签约。C = ${cpText(C)} / S = ${cpText(S)}。每日常驻约 ${cpText(C / 30)}。`, "story");
+  const weakTxt = C < S
+    ? `<p>她的轮廓淡了一点。契约成立，但不是满功率。战力按 C/S 与虚弱等级衰减到约 ${pc(f.power / f.basePower)}。</p>`
+    : C > S
+      ? `<p>她的轮廓很实。满功率。你多付的那部分像硬币掉进井里，没有回声。</p>`
+      : `<p>她的轮廓刚好落满整个座位。满功率。她看了你一眼，似乎对你懂行这件事略有意外。</p>`;
+  completeEvent("m02", {
+    stamp: "契约成立",
+    title: "第一只眷属",
+    body: `
+      <p>砚在契约末尾按下指印。指印是黑色的，像一小块夜。</p>
+      <p>“从今天起，你每天醒来都会少一点颜色。”她说，“别担心，城市本来就没什么好看的。”</p>
+      ${weakTxt}
+      <p>她把袖子里的墨水瓶放在桌上：“这是我的形态。别打碎。碎了，我就得重新找一个愿意付账的人。”</p>
+      <p>你算了一下：每天 ${cpText(C / 30)}。一个月 ${cpText(C)}。你还有 60 年可活，前提是别死。</p>
+    `
+  });
+}
+
+function finalizeSignThree(C){
+  closeModal();
+  C = roundHalf(C);
+  const S = 200;
+  const ratio = C / S;
+  if (ratio < CFG.LOW_TOLERANCE){
+    spendCP(80, "谈判失败，茶钱");
+    if (state.ending) return;
+    state.currentEvent = null;
+    state.pendingOutcome = {
+      stamp: "契约未成立",
+      title: "衡合上了算盘",
+      body: `<p>衡看了你一会儿，把契约收回纸袖里。“你压得太低了。我不是来做好事的。”</p><p>它从窗户飘出去，像一张被风卷走的收据。你损失了一点茶钱，也损失了一条可能的路。</p>`
+    };
+    renderAll();
+    return;
+  }
+  const f = makeFamiliar("heng", C, {
+    clauses:[
+      { id:"heng_social", type:"社会关系", label:"陈姨对你的照顾", costCP:C, isSplit:false, splitFrom:null, active:true }
+    ]
+  });
+  state.familiars.push(f);
+  state.player.flags.signedHeng = true;
+  addLog(`与衡签约。C = ${cpText(C)} / S = ${cpText(S)}。每日常驻约 ${cpText(C / 30)}。`, "story");
+  const weakTxt = C < S
+    ? `<p>契约成立了，但纸面有点薄。衡的轮廓偶尔会透出背后的窗。战力只剩满功率的约 ${pc(f.power / f.basePower)}，它自己似乎也不太满意。</p>`
+    : C > S
+      ? "<p>契约很厚。衡把多余的部分折成一只纸鹤，放进袖子里：“算你预付的咨询费。”</p>"
+      : "<p>契约刚好对齐。衡把算盘拨了一下，所有珠子同时停住。满功率。</p>";
+  completeEvent("m07", {
+    stamp: "契约成立",
+    title: "第三只眷属",
+    body: `
+      <p>衡从算盘上走下来，落在你的影子里。它很轻，几乎不增加重量。</p>
+      <p>“陈姨明天会忘记你为什么总在半夜回来。”它说，“后天会忘记你爱吃什么。大后天，她会在楼道里问你找谁。”</p>
+      <p>你没有说话。你只是算了一下：这段社会关系值每日 ${cpText(C / 30)}。比一顿饭贵，比一个家便宜。</p>
+      ${weakTxt}
+      <p>衡把断算盘挂在你腰上：“走吧。去找你姐姐。顺便把这个世界欠异质的账，算清楚。”</p>
+    `
+  });
+}
+
+/* ============================================================
+   9. 账本 / 拆分 / 折现 / 还款
+   ============================================================ */
+function openLedger(fid){
+  if (state && state.battle){
+    toast("战斗中不能重签条款。先把这一场活过去。", "loss");
+    return;
+  }
+  const f = getFamiliar(fid);
+  if (!f) return;
+  const clauses = f.clauses || [];
+  const activeC = roundHalf(clauses.filter(c => c.active !== false).reduce((s, c) => s + c.costCP, 0));
+  const daily = f.oneTime ? 0 : roundHalf(activeC / CFG.DAILY_UPKEEP_DIVISOR);
+  const rows = clauses.map((c, i) => `
+    <div class="ledger-clause">
+      <div class="clause-head">
+        <div>
+          <div class="clause-name">${esc(c.label)} ${c.isSplit ? '<span class="tiny muted">[碎片]</span>' : ''}</div>
+          <div class="clause-meta">${esc(c.type)} · ${c.isSplit ? '由拆分产生，不可再拆' : '可拆分一次'} · ${c.active === false ? '停付' : '生效中'}</div>
+        </div>
+        <div class="clause-cost">${cpText(c.costCP)}</div>
+      </div>
+      <div class="clause-actions">
+        <button data-modal-action="split-clause" data-fid="${f.id}" data-index="${i}" ${c.isSplit || c.costCP < 1 ? "disabled" : ""}>拆成两条</button>
+        <button data-modal-action="toggle-clause" data-fid="${f.id}" data-index="${i}" ${f.oneTime ? "disabled title='一次性记忆已经支付，不能停付'" : ""}>${c.active === false ? "恢复支付" : "停付"}</button>
+      </div>
+    </div>`).join("");
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">CONTRACT LEDGER</div><h2 class="modal-title">${esc(f.name)} 的代价账本</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="dossier">
+        <div class="row"><span>形态</span><b>${esc(f.form)}</b></div>
+        <div class="row"><span>性格 / 忠诚</span><b>${esc(f.personality)} · ${f.loyalty}</b></div>
+        <div class="row"><span>交涉辅助</span><b>${f.negotiation >= 0 ? "+" : ""}${f.negotiation}</b></div>
+        <div class="row"><span>满功率 S</span><b>${cpText(f.S)}</b></div>
+        <div class="row"><span>当前 C</span><b>${cpText(activeC)}</b></div>
+        <div class="row"><span>C / S</span><b>${f.S ? fmtRatio({ ...f, C:activeC }) : "0.00"} ${activeC < f.S * CFG.LOW_TOLERANCE ? "· 低于下限" : ""}</b></div>
+        <div class="row"><span>战力</span><b>${f.power} / ${f.basePower}</b></div>
+        <div class="row"><span>状态</span><b>${statusText(f)}</b></div>
+        <div class="row"><span>每日常驻</span><b>${f.oneTime ? "一次性已付" : cpText(daily)}</b></div>
+      </div>
+      <p class="small muted">“拆代价”会把一条条款分成两条等额碎片，向下取整到 0.5 CP。碎片不可再拆。拆开后可以分别停付，从而降低 C 与每日常驻，但会削弱眷属。</p>
+      ${rows || '<p class="muted">没有可显示的条款。这份契约是口头的。</p>'}
+      <div class="modal-actions">
+        <button class="btn ghost" data-modal-action="close">关闭</button>
+      </div>
+    </div>`;
+  openModal(body, "wide");
+}
+
+function splitClause(fid, index){
+  const f = getFamiliar(fid);
+  if (!f) return;
+  const c = f.clauses[index];
+  if (!c || c.isSplit || c.costCP < 1){
+    toast("这条条款不能再拆。", "loss");
+    return;
+  }
+  const half = roundHalf(Math.floor((c.costCP / 2) * 2) / 2);
+  const other = roundHalf(c.costCP - half);
+  if (half < 0.5 || other < 0.5){
+    toast("拆分后低于最小单位 0.5 CP。", "loss");
+    return;
+  }
+  const a = { ...c, id:c.id + "_a", costCP:half, isSplit:true, splitFrom:c.id, active:c.active !== false };
+  const b = { ...c, id:c.id + "_b", costCP:other, isSplit:true, splitFrom:c.id, active:c.active !== false };
+  f.clauses.splice(index, 1, a, b);
+  state.splitUsed = true;
+  state.stats.splits += 1;
+  addLog(`拆代价：${f.name} 的“${c.label}” ${cpText(c.costCP)} → ${cpText(half)} + ${cpText(other)}。`, "story");
+  toast(`已拆分：${cpText(c.costCP)} → ${cpText(half)} + ${cpText(other)}`);
+  refreshFamiliarStates();
+  renderAll();
+  openLedger(fid);
+}
+
+function toggleClause(fid, index){
+  const f = getFamiliar(fid);
+  if (!f || f.oneTime) return;
+  const c = f.clauses[index];
+  if (!c) return;
+  c.active = c.active === false;
+  refreshFamiliarStates();
+  const total = roundHalf(f.clauses.filter(x => x.active !== false).reduce((s, x) => s + x.costCP, 0));
+  f.C = total;
+  refreshFamiliarStates();
+  addLog(`${c.label} ${c.active === false ? "停付" : "恢复支付"}。${f.name} 的 C 变为 ${cpText(f.C)}。`, "story");
+  if (f.C / f.S < CFG.LOW_TOLERANCE){
+    toast(`注意：${f.name} 的 C/S 已低于 ${CFG.LOW_TOLERANCE}，战斗中可能拒绝出战。`, "loss");
+  }
+  renderAll();
+  openLedger(fid);
+}
+
+function openAssets(){
+  const rows = state.assets.map(a => `
+    <div class="asset-row">
+      <div><span class="a-name">${esc(a.label)}</span><span class="a-type">${esc(a.type)}</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="a-val">${cpText(a.value)}</span>
+        <button data-modal-action="cash-asset" data-id="${esc(a.id)}">折现 ${cpText(roundHalf(a.value * CFG.CASH_OUT_RATE))}</button>
+      </div>
+    </div>`).join("");
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">TRADABLE COST</div><h2 class="modal-title">可交易代价</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>你身上还能卖的东西。代价银行按 ${Math.round(CFG.CASH_OUT_RATE * 100)}% 折现，不收手续费——因为手续费已经算在折现率里了。</p>
+      <div class="asset-list">${rows || '<p class="muted">你已经没有可卖的东西了。除了自己。</p>'}</div>
+      <p class="tiny muted">总估值：${cpText(tradableTotal())}。折现会立刻增加剩余寿命 CP。</p>
+      <div class="modal-actions"><button class="btn ghost" data-modal-action="close">关闭</button></div>
+    </div>`;
+  openModal(body);
+}
+
+function cashAsset(id){
+  const a = state.assets.find(x => x.id === id);
+  if (!a) return;
+  const gain = roundHalf(a.value * CFG.CASH_OUT_RATE);
+  state.assets = state.assets.filter(x => x.id !== id);
+  gainCP(gain, `折现：${a.label}`);
+  renderAll();
+  openAssets();
+}
+
+function openRepay(){
+  const aff = Math.min(500, state.bankDebt, state.player.lifespanCP);
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">A1 · DEBT</div><h2 class="modal-title">向代价银行还款</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="dossier">
+        <div class="row"><span>当前债务</span><b>${cpText(state.bankDebt)}</b></div>
+        <div class="row"><span>本次还款</span><b>${cpText(aff)}</b></div>
+        <div class="row"><span>还款后</span><b>${cpText(Math.max(0, state.bankDebt - aff))}</b></div>
+      </div>
+      <p>银行不接受“以后再说”。但银行接受 CP。</p>
+      <div class="modal-actions">
+        <button class="btn ghost" data-modal-action="close">再等等</button>
+        <button class="btn primary" data-modal-action="repay-confirm" ${aff <= 0 ? "disabled" : ""}>还 ${cpText(aff)}</button>
+      </div>
+    </div>`;
+  openModal(body);
+}
+
+function repayBank(){
+  const aff = Math.min(500, state.bankDebt, state.player.lifespanCP);
+  if (aff <= 0) return;
+  spendCP(aff, "偿还银行债务");
+  if (state.ending) return;
+  reduceBankDebt(aff, "主动还款");
+  addLog(`向代价银行还款 ${cpText(aff)}。剩余债务 ${cpText(state.bankDebt)}。`, "story");
+  toast(`还款 ${cpText(aff)}，剩余 ${cpText(state.bankDebt)}`);
+  closeModal();
+  renderAll();
+}
+
+/* ============================================================
+   10. 临时改写
+   ============================================================ */
+function openRewrite(){
+  const b = state.battle;
+  if (!b || b.ended) return;
+  if (b.capture){
+    toast("被夺走的眷属不在你的账上，无法挪动她的代价。", "loss");
+    return;
+  }
+  if (b.rewriteUsesLeft <= 0){
+    toast("本场战斗的临时改写次数已用完。", "loss");
+    return;
+  }
+  if (b.rewriteCooldown > 0){
+    toast(`临时改写冷却中：还剩 ${b.rewriteCooldown} 回合。`, "loss");
+    return;
+  }
+  const fams = state.familiars.filter(f => f.status !== "broken" && f.status !== "berserk");
+  if (fams.length < 2){
+    toast("至少需要两只可用眷属才能挪动代价。", "loss");
+    return;
+  }
+  const pairs = [];
+  for (const a of fams){
+    for (const c of fams){
+      if (a.id === c.id) continue;
+      pairs.push(`<button class="tier" data-modal-action="rewrite-confirm" data-source="${a.id}" data-target="${c.id}">
+        <b>${esc(a.name)} → ${esc(c.name)}</b>
+        <span>接下来 ${CFG.REWRITE_DURATION} 回合，${esc(a.name)} 的爆发代价会暂时记在 ${esc(c.name)} 的 C 上。不会扣你的寿命，但可能让 ${esc(c.name)} 越过上限。</span>
+      </button>`);
+    }
+  }
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">BLANK CONTRACT · REWRITE</div><h2 class="modal-title">临时改写</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>把一只眷属的“战斗力代价”暂时挪到另一只眷属头上。持续 ${CFG.REWRITE_DURATION} 回合，冷却 ${CFG.REWRITE_COOLDOWN} 回合。本场剩余 ${b.rewriteUsesLeft} 次。</p>
+      <p class="tiny muted">代价不会消失，只会换一个名字。C/S 超过 ${CFG.HIGH_TOLERANCE} 时，接收方可能暴走。战斗结束后账目自动回滚。</p>
+      <div class="tier-list">${pairs.join("")}</div>
+      <div class="modal-actions"><button class="btn ghost" data-modal-action="close">取消</button></div>
+    </div>`;
+  openModal(body, "wide");
+}
+
+function confirmRewrite(sourceId, targetId){
+  const b = state.battle;
+  if (!b) return;
+  b.rewrite = { sourceId, targetId, turns:CFG.REWRITE_DURATION };
+  b.rewriteUsesLeft -= 1;
+  b.rewriteCooldown = CFG.REWRITE_COOLDOWN;
+  state.stats.rewriteUses += 1;
+  const s = getFamiliar(sourceId), t = getFamiliar(targetId);
+  addLog(`临时改写：${s.name} 的爆发代价暂记在 ${t.name} 账上。`, "story");
+  battleLog(`临时改写生效：${s.name} → ${t.name}。持续 ${CFG.REWRITE_DURATION} 回合。`, "sys");
+  closeModal();
+  renderAll();
+}
+
+/* ============================================================
+   11. 结局
+   ============================================================ */
+const ENDINGS = {
+  death_balance: {
+    title: "余额不足",
+    sub: "ENDING · 01 / 死亡",
+    color: "#b94f43",
+    body(){
+      return `
+        <p>你的寿命余额归零，像一张被刷爆的卡。</p>
+        <p>最后一刻，你看见自己的账本自动合上。封面上浮出一行字：<em>“该客户已无可用代价。转入坏账。”</em></p>
+        <p>你想起姐姐说过，人死后会变成一颗星星。你算了一下，星星的寿命大概是几十亿年，换算成 CP 是负数。银行连这个都算得出来。</p>
+        <p>旧港区的雨还在下。没有人来收尸，因为收尸也要花代价。</p>
+      `;
+    }
+  },
+  death_body: {
+    title: "肉体坏账",
+    sub: "ENDING · 02 / 死亡",
+    color: "#b94f43",
+    body(){
+      return `
+        <p>你的身体先于账本到期了。</p>
+        <p>你倒在地上，听见自己骨头里传出算盘珠碰撞的声音。有人翻你的口袋，拿走了空白契约，又放回来，因为“这玩意儿认主”。</p>
+        <p>你最后想到的是：如果早知道会死，至少该把那碗光面吃完。</p>
+      `;
+    }
+  },
+  death_berserk: {
+    title: "越界判定",
+    sub: "ENDING · 03 / 暴走",
+    color: "#b94f43",
+    body(meta){
+      return `
+        <p>${esc(meta.familiar || "她")} 的条款越过了最后一条边界。</p>
+        <p>你掷出了 ${meta.roll}，需要超过 ${meta.threshold}。数字在纸面上停住，像一只落在窗台上的鸟，然后飞走了。</p>
+        <p>她没有给你留下解释。她只是把你写进了另一份契约的“已支付”一栏。</p>
+        <p>你终于明白，代价不是钱。代价是有人愿意替你承担，或者不愿意。</p>
+      `;
+    }
+  },
+  bank: {
+    title: "银行的一枚印章",
+    sub: "ENDING · 04 / 被吞并",
+    color: "#c4a35f",
+    body(){
+      return `
+        <p>你在新契约上签了字。葛四亲自给你递笔，笔杆是温的。</p>
+        <p>债务一笔勾销。你得到一间有窗的办公室、一枚铜制印章、一份永远不会到期的工资。你的工作是从别人的寿命里，精确地扣除他们欠下的部分。</p>
+        <p>第三金库迎来了新的守门人。你干得很好，因为你天生就该干这个。</p>
+        <p>只是每年雨季，你会在账本最后一页看见一个名字：弥。你每次都用红笔把它划掉，再在旁边写：<em>“已核销。”</em></p>
+        <div class="quote"><span class="speaker">系统 / 员工档案</span>【姓名：${esc(state.player.name)}｜岗位：第三金库守门人｜契约状态：永久｜离职申请：不支持】</div>
+      `;
+    }
+  },
+  truth: {
+    title: "把代价还给城市",
+    sub: "ENDING · 05 / 揭示真相",
+    color: "#73a89d",
+    body(){
+      return `
+        <p>你打开总账。整座金库像一只被剖开的胃，储存了七年的代价从抽屉、玻璃罐、纸页里涌出来。</p>
+        <p>颜色先回来了。然后是被卖掉的声音、被抵押的童年、被拆开的痛觉、被淡化的社会关系。它们像雨一样落回这座城市，落回每一个还活着的人身上。</p>
+        <p>姐姐没有出来。她把自己写进了总账的最后一页，作为“条款重组”的燃料。你只能听见她的声音，很轻，像翻页：“小账，别替我签字。替我改。”</p>
+        <p>你改了一部分。你还没有能力改完整个世界，但至少这一页，不再由银行来写。</p>
+        <p>葛四在废墟外面等你。他没有动手，只问：“你知道你放出来的是什么吗？”</p>
+        <p>你说：“是债。债总得有人认。”</p>
+      `;
+    }
+  },
+  hidden: {
+    title: "条款之外",
+    sub: "ENDING · 06 / 隐藏",
+    color: "#9584b2",
+    body(){
+      return `
+        <p>你把空白契约按在总账上。整座金库安静下来，像一个人终于停止了呼吸。</p>
+        <p>你看见世界的底层条款：异质不是入侵者，是债权人。普通位面欠它们一整个世界的形态、名字和存在。代价银行只是把这笔旧债私有化，做成了一门生意。</p>
+        <p>你开始改写。不是删除，是重组——把“偿还”拆成“共存”，把“依附”拆成“缔约”，把“代价”拆成“选择”。每改一个字，你身上就少一样东西：颜色、声音、味觉、关于自己的某段记忆。</p>
+        <p>最后，你看见姐姐。她站在总账的空白页上，年轻得像七年前那个没接通的电话。</p>
+        <p>“你改完了？”她问。</p>
+        <p>“改完了一页。”你说，“剩下的慢慢来。”</p>
+        <p>井口的天亮了。旧港区第一次在没有银行的情况下，开始计算自己的账。</p>
+      `;
+    }
+  },
+  leave: {
+    title: "失踪人口",
+    sub: "ENDING · 07 / 离开",
+    color: "#777b78",
+    body(){
+      return `
+        <p>你转身离开。井盖在身后合上，发出很轻的一声，像账本合页。</p>
+        <p>你买了一张最远的车票，用假名字。你不再看任何人的代价，也不再签任何契约。你找了一份不需要寿命抵押的工作，在另一个城市的仓库里搬箱子。</p>
+        <p>有时候你会看见新闻：旧港区发生地下气体泄漏，代价银行第三分理处暂停营业，失踪人口名单新增若干。你关掉电视，继续搬箱子。</p>
+        <p>你活得比大多数人都久。只是每年有那么几天，你会梦见一口井，井底有人敲三下。</p>
+        <p>你从不回应。你怕一开口，就会听见自己说：“我来了。”</p>
+      `;
+    }
+  }
+};
+
+function endingCollection(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  }catch(e){ return []; }
+}
+
+function unlockEnding(id){
+  try{
+    const arr = endingCollection();
+    if (!arr.includes(id)){
+      arr.push(id);
+      localStorage.setItem(SAVE_KEY, JSON.stringify(arr));
+    }
+  }catch(e){ /* 本地文件可能禁用 localStorage，不影响游玩 */ }
+}
+
+function endGame(id, meta = {}){
+  if (!state) return;
+  if (state.ending) return;
+  const e = ENDINGS[id];
+  if (!e) return;
+  state.ending = { id, meta, at:Date.now() };
+  state.battle = null;
+  state.currentEvent = null;
+  state.pendingOutcome = null;
+  closeModal();
+  clearToasts();
+  unlockEnding(id);
+  addLog(`结局：${e.title}`, "story");
+  renderAll();
+  scrollStageTop();
+}
+
+/* ============================================================
+   12. 渲染
+   ============================================================ */
+function statusText(f){
+  if (!f) return "";
+  if (state && state.battle && state.battle.capture && state.battle.capture.familiarId === f.id) return "被夺走";
+  if (f.status === "broken") return "契约断裂";
+  if (f.status === "berserk") return "暴走";
+  if (f.status === "weak"){
+    const lv = famWeakLevel(f);
+    return `虚弱 ${lv} 级`;
+  }
+  return famRatio(f) > 1 ? "满功率 · 超额" : "满功率";
+}
+
+function statusClass(f){
+  if (!f) return "";
+  if (state && state.battle && state.battle.capture && state.battle.capture.familiarId === f.id) return "berserk";
+  return f.status || "normal";
+}
+
+function renderAll(){
+  if (!state) return;
+  $("#start-screen").classList.add("hidden");
+  $("#game-screen").classList.remove("hidden");
+  renderTop();
+  renderSidebar();
+  renderLog();
+  renderStage();
+  renderPrinciple();
+}
+
+function renderTop(){
+  const p = state.player;
+  const life = $("#top-life");
+  const lifeSub = $("#top-life-sub");
+  if (p.precisionMode){
+    life.textContent = comma(roundHalf(p.lifespanCP)) + " CP";
+    lifeSub.textContent = fmtYears(p.lifespanCP);
+  } else {
+    const r = fuzzyRange(p.lifespanCP);
+    life.textContent = "约 " + comma(r.low) + "–" + comma(r.high) + " CP";
+    lifeSub.textContent = fmtLifeLong(p.lifespanCP);
+  }
+  $("#top-assets").textContent = cpText(tradableTotal());
+  $("#top-assets-sub").textContent = state.assets.length + " 项可交易代价";
+  $("#top-turn").textContent = "第 " + state.day + " 日";
+  $("#top-turn-sub").textContent = "行动 " + state.ap + " / " + state.maxAp;
+  const prec = $("#top-precision");
+  const precSub = $("#top-precision-sub");
+  if (p.precisionMode){
+    prec.textContent = "精确 0.5";
+    precSub.textContent = "天赋在线";
+    prec.className = "stat-value teal";
+  } else {
+    prec.textContent = "模糊 ±18%";
+    precSub.textContent = "天赋已注销";
+    prec.className = "stat-value red";
+  }
+}
+
+function renderSidebar(){
+  const p = state.player;
+  $("#side-day").textContent = "D" + String(state.day).padStart(2, "0");
+  $("#fam-count").textContent = state.familiars.length + " / 3";
+
+  const neg = effectiveNegotiation();
+  $("#player-panel").innerHTML = `
+    <div class="kv"><span class="k">契主</span><span class="v">${esc(p.name)}</span></div>
+    <div class="kv"><span class="k">体质</span><span class="v">${p.hp} / ${p.maxHp}</span></div>
+    <div class="meter red" style="margin:3px 0 6px"><i style="width:${clamp(p.hp / p.maxHp * 100, 0, 100)}%"></i></div>
+    <div class="kv"><span class="k">交涉</span><span class="v">${neg}${p.precisionMode ? "" : "（估）"}</span></div>
+    <div class="kv"><span class="k">每日常驻</span><span class="v">${cpText(calcUpkeep())}</span></div>
+    <div class="kv"><span class="k">银行渠道费</span><span class="v">${cpText(CFG.DAILY_BANK_FEE)}</span></div>
+    <div class="kv"><span class="k">线索</span><span class="v">${clueCount()} 条</span></div>
+    <div style="display:flex;gap:6px;margin-top:9px">
+      <button class="mini-btn" data-action="assets">可交易代价</button>
+      <button class="mini-btn" data-action="help">规则</button>
+    </div>
+  `;
+
+  if (!state.familiars.length){
+    $("#familiar-list").innerHTML = `<div class="empty-note">你还没有眷属。<br>契约需要代价，也需要一个愿意签字的人。</div>`;
+  } else {
+    $("#familiar-list").innerHTML = state.familiars.map(f => {
+      const r = famRatio(f);
+      const activeC = roundHalf((f.clauses || []).filter(c => c.active !== false).reduce((s, c) => s + c.costCP, 0));
+      return `
+        <div class="fam-card" style="--fam-color:${f.color}">
+          <div class="fam-top">
+            <div>
+              <div class="fam-name">${esc(f.name)}</div>
+              <div class="fam-form">${esc(f.tag)} · ${esc(f.form)}</div>
+            </div>
+            <span class="fam-status ${statusClass(f)}">${statusText(f)}</span>
+          </div>
+          <div class="fam-meta"><span>C / S</span><b>${cpText(activeC)} / ${cpText(f.S)}</b></div>
+          <div class="meter-row" style="margin-top:4px">
+            <div class="meter ${r < 0.8 ? "red" : r < 1 ? "gold" : ""}"><i style="width:${clamp(r / 1.3 * 100, 0, 100)}%"></i></div>
+            <span class="tiny mono ${r < 0.8 ? "red" : r > 1.3 ? "red" : "muted"}">${fmtRatio(f)}</span>
+          </div>
+          <div class="fam-meta"><span>战力</span><b>${f.power} / ${f.basePower}</b><span>忠诚 ${f.loyalty}</span></div>
+          <div class="fam-actions">
+            <button class="mini-btn" data-action="ledger" data-fid="${f.id}">账本 / 拆分</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  if (!state.player.flags.blankContract){
+    $("#blank-state").textContent = "SEALED";
+    $("#blank-panel").innerHTML = `<div class="empty-note">一张没有字的契约。你还没决定要不要碰它。</div>`;
+  } else {
+    const remain = Math.max(0, state.countdownEndDay - state.day);
+    const known = state.countdownKnown;
+    $("#blank-state").textContent = state.revealed ? "REVEALED" : "ACTIVE";
+    $("#blank-panel").innerHTML = `
+      <div class="contract-strip">
+        <div class="contract-title">空白契约 / 未绑定</div>
+        <div class="contract-meta">
+          持有人：${esc(state.player.name)}<br>
+          条款：<span class="violet">0 条 / 可写</span><br>
+          倒计时：<span class="countdown">${known ? remain + " 日" : "?? 日"}</span><br>
+          姓名：${state.revealed ? '<span class="red">弥</span>' : '<span class="muted">被涂黑</span>'}<br>
+          坐标：${state.revealed ? '<span class="red">17 号井</span>' : '<span class="muted">被涂黑</span>'}
+        </div>
+        <div class="ability-row">
+          <button class="btn ghost" data-action="split-help" style="font-size:9px">拆代价</button>
+          <button class="btn ghost" data-action="temporary-help" style="font-size:9px">临时改写</button>
+        </div>
+      </div>
+      <div class="tiny muted" style="margin-top:7px">拆代价：选择眷属账本中的条款，一条只能拆一次。临时改写：战斗中挪动爆发代价。</div>
+    `;
+  }
+
+  $("#debt-tag").textContent = state.bankDebt > 0 ? "A1" : "CLEAR";
+  $("#debt-panel").innerHTML = `
+    <div class="kv"><span class="k">当前债务</span><span class="v red">${cpText(state.bankDebt)}</span></div>
+    <div class="meter gold" style="margin:3px 0 6px"><i style="width:${clamp(state.bankDebt / 3000 * 100, 0, 100)}%"></i></div>
+    <div class="kv"><span class="k">季度核账</span><span class="v">${state.day < 8 ? "第 8 日" : "已核"}</span></div>
+    <div class="kv"><span class="k">银行怀疑</span><span class="v">${state.suspicion} / 5</span></div>
+    <button class="btn wide" data-action="repay" style="margin-top:8px;font-size:10px;padding:6px 8px">还款 ${cpText(500)}</button>
+  `;
+}
+
+function renderLog(){
+  const list = $("#log-list");
+  if (!list) return;
+  if (!state.logs.length){
+    list.innerHTML = `<div class="log-empty">还没有记录。你的一天从一张空白契约开始。</div>`;
+    return;
+  }
+  list.innerHTML = state.logs.slice(-14).reverse().map(l => `
+    <div class="log-item ${l.type}"><span class="day">D${String(l.day).padStart(2, "0")}</span>${esc(l.text)}</div>
+  `).join("");
+}
+
+function renderPrinciple(){
+  const el = $("#principle-panel");
+  if (!el) return;
+  const lo = CFG.LOW_TOLERANCE, hi = CFG.HIGH_TOLERANCE;
+  el.innerHTML = `
+    <div class="kv"><span class="k">下限</span><span class="v">C &lt; ${pc(lo)} S</span></div>
+    <div class="kv"><span class="k">衰减区</span><span class="v">${pc(lo)} S – S</span></div>
+    <div class="kv"><span class="k">满功率</span><span class="v">S – ${pc(hi)} S</span></div>
+    <div class="kv"><span class="k">暴走区</span><span class="v red">&gt; ${pc(hi)} S</span></div>
+    <div class="tiny muted" style="margin-top:7px;line-height:1.7">1 CP = 1 天寿命。最小单位 ${CFG.MIN_CP} CP。${state.player.precisionMode ? "你的视界可读出精确值。" : "你的视界已降级，只能读出区间。"}</div>
+  `;
+}
+
+function renderStage(){
+  const stage = $("#stage");
+  if (!stage) return;
+  if (state.ending){
+    stage.innerHTML = renderEnding();
+    return;
+  }
+  if (state.battle){
+    stage.innerHTML = renderBattle();
+    return;
+  }
+  if (state.pendingOutcome){
+    stage.innerHTML = renderOutcome();
+    return;
+  }
+  if (state.currentEvent){
+    stage.innerHTML = renderEvent(state.currentEvent);
+    return;
+  }
+  stage.innerHTML = renderHub();
+}
+
+function renderEvent(id){
+  const ev = EVENTS[id] || SIDE_EVENTS[id];
+  if (!ev) return "";
+  const opts = typeof ev.options === "function" ? ev.options() : (ev.options || []);
+  const optHtml = opts.map((o, i) => {
+    const ok = !o.condition || o.condition();
+    const tone = o.tone ? " " + o.tone : "";
+    return `<button class="choice${tone}${ok ? "" : " disabled"}" ${ok ? `data-opt="${i}"` : "disabled"} data-event-id="${esc(id)}">
+      <span class="choice-main">${o.text}</span>
+      ${o.hint ? `<span class="choice-hint">${o.hint}</span>` : ""}
+    </button>`;
+  }).join("");
+  return `
+    <div class="scene">
+      <div class="scene-top">
+        <span class="scene-loc">${esc(ev.location || "未知坐标")}</span>
+        <span class="scene-type">${esc(ev.type || "事件")}</span>
+      </div>
+      <h1 class="scene-title">${esc(ev.title || "无题")}</h1>
+      <div class="scene-body">${typeof ev.body === "function" ? ev.body() : (ev.body || "")}</div>
+      <div class="choices">${optHtml}</div>
+      <div class="scene-foot">
+        <span>${ev.free ? "本事件不消耗行动点" : "消耗 1 行动点"}</span>
+        <span>第 ${state.day} 日 · 行动点 ${state.ap} / ${state.maxAp}</span>
+      </div>
+    </div>`;
+}
+
+function renderHub(){
+  const main = getNextMain();
+  const sides = Object.keys(SIDE_EVENTS).filter(sideAvailable);
+  const lifeWarn = state.player.lifespanCP < 1200;
+  const apReady = state.ap > 0;
+  const isFinale = main && main.id === "m12";
+  const mainCard = main ? `
+    <button class="hub-card story${isFinale ? " final" : ""}" data-event="${main.id}" ${apReady ? "" : "disabled"}>
+      <div class="card-kicker">${isFinale ? "FINALE · 终局" : "MAIN STORY · 主线"}</div>
+      <h3>${isFinale ? "井底的门已经打开" : esc(main.title)}</h3>
+      <p>${isFinale ? "坐标：旧港区 17 号井 · 第三金库。你姐姐在最后一页等你。" : esc(main.type) + " · " + esc(main.location || "")}</p>
+      <div class="card-foot"><span>${apReady ? "消耗 1 行动点" : "行动点不足"}</span><span class="go">${apReady ? "进入 →" : "结束今天"}</span></div>
+    </button>` : `
+    <div class="hub-card story" style="cursor:default">
+      <div class="card-kicker">MAIN STORY · 主线</div>
+      <h3>等待时间把账翻到下一页</h3>
+      <p>当前没有可推进的主线事件。你可以去做支线、还债，或者直接结束今天。</p>
+      <div class="card-foot"><span>时间仍在走</span><span class="go">倒计时 ${Math.max(0, state.countdownEndDay - state.day)} 日</span></div>
+    </div>`;
+
+  const sideCards = sides.map(id => {
+    const ev = SIDE_EVENTS[id];
+    return `
+      <button class="hub-card" data-event="${id}" ${apReady ? "" : "disabled"}>
+        <div class="card-kicker">SIDE · ${esc(ev.type.replace("支线 · ", ""))}</div>
+        <h3>${esc(ev.title)}</h3>
+        <p>${esc(ev.location)}</p>
+        <div class="card-foot"><span>${apReady ? "消耗 1 行动点" : "行动点不足"}</span><span class="go">${apReady ? "进入 →" : "结束今天"}</span></div>
+      </button>`;
+  }).join("");
+
+  const finale = state.revealed && !state.completed.m12 && !isFinale ? `
+    <button class="hub-card final story" data-event="m12" ${apReady ? "" : "disabled"}>
+      <div class="card-kicker">FINALE · 终局</div>
+      <h3>井底的门已经打开</h3>
+      <p>坐标：旧港区 17 号井 · 第三金库。你姐姐在最后一页等你。</p>
+      <div class="card-foot"><span>${apReady ? "消耗 1 行动点" : "行动点不足"}</span><span class="go">${apReady ? "下去 →" : "结束今天"}</span></div>
+    </button>` : "";
+
+  const neg = effectiveNegotiation();
+  return `
+    <div class="scene">
+      <div class="hub-head">
+        <div>
+          <div class="hub-date">DAY ${String(state.day).padStart(2, "0")} / 13 · ${state.day < 6 ? "雨季" : state.day < 10 ? "深雨" : "倒计时"}</div>
+          <h1 class="hub-title">${hubTitle()}</h1>
+          <div class="hub-quote">${hubQuote()}</div>
+        </div>
+        <div class="ap-block"><b>${state.ap} / ${state.maxAp}</b><span>今日行动点</span></div>
+      </div>
+
+      <div class="dossier" style="margin-top:20px">
+        <div class="row"><span>剩余寿命</span><b>${cpText(state.player.lifespanCP)} · ${state.player.precisionMode ? fmtYears(state.player.lifespanCP) : "估值"}</b></div>
+        <div class="row"><span>可交易代价</span><b>${cpText(tradableTotal())}（${state.assets.length} 项）</b></div>
+        <div class="row"><span>交涉</span><b>${neg}</b></div>
+        <div class="row"><span>线索</span><b>${clueCount()} 条</b></div>
+        <div class="row"><span>银行债务</span><b class="red">${cpText(state.bankDebt)}</b></div>
+        <div class="row"><span>常驻 / 渠道</span><b>${cpText(calcUpkeep())} + ${cpText(CFG.DAILY_BANK_FEE)} / 日</b></div>
+      </div>
+
+      <div class="hub-sublead">今日事项</div>
+      <div class="hub-grid">
+        ${mainCard}
+        ${finale}
+        ${sideCards || '<div class="empty-note" style="grid-column:1/-1">今天没有别的委托。你可以结束今天，或去账本里调一调代价。</div>'}
+      </div>
+
+      <div class="hub-footer">
+        <div class="small muted">
+          ${lifeWarn ? '<span class="red">寿命余额偏低。再付一次爆发代价，你可能连明天都撑不到。</span>' : `结束今天将扣除常驻与渠道费：<strong>${cpText(totalDailyCost())}</strong>。`}
+        </div>
+        <div class="day-actions">
+          <button class="btn ghost" data-action="assets">变卖代价</button>
+          <button class="btn" data-action="end-day">结束今天 →</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function hubTitle(){
+  if (state.revealed) return "最后一页";
+  if (state.day <= 1) return "第一日 · 空白";
+  if (state.day <= 3) return "账房见习";
+  if (state.day <= 5) return "学会看价";
+  if (state.day <= 7) return "精度之外";
+  if (state.day <= 10) return "井下的账";
+  return "倒计时";
+}
+
+function hubQuote(){
+  if (state.revealed) return "井盖下面有人敲了三下。你数了数，正好是你欠世界的次数。";
+  if (state.day === 1) return "你继承了一张空白契约和一笔不属于你的债。城市还在下雨，银行照常营业。";
+  if (!state.player.precisionMode) return "你再也看不清 0.5 CP 的差别了。世界变得模糊，但账单仍然精确。";
+  if (state.day >= 11) return "倒计时快到了。你开始怀疑，姐姐留给你的不是遗产，是一笔需要你亲自签收的债。";
+  return "旧港区的雨没有停过。代价银行照常开门，猎契人照常收货。你今天还有两个行动点。";
+}
+
+function renderOutcome(){
+  const o = state.pendingOutcome;
+  return `
+    <div class="outcome">
+      <div class="outcome-stamp">${esc(o.stamp || "结算")}</div>
+      <h1>${esc(o.title || "结果")}</h1>
+      <div class="outcome-body">${o.body || ""}</div>
+      <div class="outcome-actions">
+        <button class="btn primary" data-action="continue">回到今日 →</button>
+      </div>
+      <div class="scene-foot"><span>第 ${state.day} 日 · 行动点 ${state.ap} / ${state.maxAp}</span><span>所有代价已入账</span></div>
+    </div>`;
+}
+
+/* ---------- 战斗渲染 ---------- */
+function renderBattle(){
+  const b = state.battle;
+  if (!b) return "";
+  const e = b.enemy;
+  const hpPct = clamp(e.hp / e.maxHp * 100, 0, 100);
+  const cards = b.hand.map((c, i) => {
+    const avail = cardAvailable(c);
+    const fam = c.source && c.source !== "general" ? getFamiliar(c.source) : null;
+    const srcLabel = fam ? fam.name : "通用";
+    const burst = c.burst ? `<span class="bc-burst">代价 ${cpText(c.burst)}</span>` : `<span>${c.block ? "护甲 " + c.block : c.effect ? "效果" : ""}</span>`;
+    const dmg = c.damage ? `<span class="bc-dmg">${fam ? Math.round(c.damage * familiarCardFactor(fam)) : c.damage} 伤害</span>` : "";
+    return `<button class="bcard ${c.source || "general"}" data-card="${i}" ${avail.ok ? "" : "disabled"} title="${esc(avail.reason || "")}">
+      <div class="bc-top">
+        <div><div class="bc-name">${esc(c.name)}</div><div class="bc-src">${esc(srcLabel)} · ${c.cost === 1 ? "普通" : "重击"}</div></div>
+        <span class="bc-energy">⚡ ${c.cost}</span>
+      </div>
+      <div class="bc-desc">${esc(c.desc || "")}</div>
+      <div class="bc-foot">${burst}${dmg}</div>
+    </button>`;
+  }).join("");
+
+  const cap = b.capture ? (() => {
+    const f = getFamiliar(b.capture.familiarId);
+    if (!f) return "";
+    return `<div class="capture-alert">
+      <div class="capture-top"><span><b>${esc(f.name)}</b> 被刻耳强行夺走</span><span>夺回窗口 ${b.capture.window} 回合 · 反水 ${b.capture.betrayal}/100</span></div>
+      <div class="capture-bar"><i style="width:${b.capture.betrayal}%"></i></div>
+      <div class="tiny muted" style="margin-top:5px">杀死施术者，眷属回归。窗口归零，永久消散 + 反噬。</div>
+    </div>`;
+  })() : "";
+
+  const rewriteBand = (b.rewrite.turns > 0 && b.rewrite.sourceId) ? (() => {
+    const s = getFamiliar(b.rewrite.sourceId), t = getFamiliar(b.rewrite.targetId);
+    if (!s || !t) return "";
+    return `<div class="rewrite-band"><span>临时改写：<b>${esc(s.name)}</b> 的爆发代价 → <b>${esc(t.name)}</b></span><span>剩余 ${b.rewrite.turns} 回合</span></div>`;
+  })() : "";
+
+  const statusPills = [
+    b.block > 0 ? `<span class="status-pill block">护甲 ${b.block}</span>` : "",
+    b.weaken > 0 ? `<span class="status-pill weak">敌方削弱 ${b.weaken}</span>` : "",
+    b.stun > 0 ? `<span class="status-pill stun">敌方暂缓 ${b.stun}</span>` : "",
+    b.negotiateBuff > 0 ? `<span class="status-pill">交涉 +${b.negotiateBuff}</span>` : ""
+  ].filter(Boolean).join("");
+
+  const help = b.def.help ? `<div class="battle-help">${esc(b.def.help)}</div>` : "";
+
+  return `
+    <div class="battle">
+      <div class="battle-head">
+        <div class="battle-title">${esc(b.def.title)}</div>
+        <div class="battle-round">TURN ${b.turn} · ${b.phase === "player" ? "你的回合" : "敌方回合"}</div>
+      </div>
+      <div class="enemy-zone">
+        <div class="enemy-top">
+          <div><div class="enemy-name">${esc(e.name)}</div><div class="enemy-desc">${esc(b.def.desc)}</div></div>
+          <div class="enemy-hp">${e.hp} / ${e.maxHp} HP</div>
+        </div>
+        <div class="meter red" style="margin-top:9px"><i style="width:${hpPct}%"></i></div>
+        <div class="enemy-intent">
+          <span>意图：${esc(b.intent ? b.intent.text : "观察")}</span>
+          <span class="intent-badge">${b.stun > 0 ? "暂缓执行" : "NEXT"}</span>
+        </div>
+      </div>
+      ${cap}
+      <div class="battle-mid">
+        <div class="player-zone">
+          <div class="name">${esc(state.player.name)} · 契主</div>
+          <div class="battle-stats">
+            <span>体质 <b>${state.player.hp}/${state.player.maxHp}</b></span>
+            <span>寿命 <b>${cpText(state.player.lifespanCP)}</b></span>
+            <span>护甲 <b>${b.block}</b></span>
+          </div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="player-zone">
+          <div class="name">行动力 / 改写</div>
+          <div class="battle-stats">
+            <span class="energy-orbs">${Array.from({length:b.maxEnergy}, (_,i) => `<i class="${i < b.energy ? "full" : ""}"></i>`).join("")}</span>
+            <span>改写 <b>${b.rewriteUsesLeft}</b></span>
+            <span>冷却 <b>${b.rewriteCooldown}</b></span>
+          </div>
+        </div>
+      </div>
+      ${rewriteBand}
+      ${help}
+      <div class="hand-head">
+        <div class="small muted">手牌 · 点击出牌</div>
+        <div class="hint">能量 ${b.energy}/${b.maxEnergy} · 牌库 ${b.deck.length} · 弃牌 ${b.discard.length}</div>
+      </div>
+      <div class="hand">${cards || '<div class="empty-note" style="grid-column:1/-1">没有手牌。结束回合后重新抽取。</div>'}</div>
+      <div class="battle-controls">
+        <div class="left">
+          ${statusPills}
+        </div>
+        <div class="left">
+          <button class="btn ghost" data-battle-action="rewrite" ${b.rewriteUsesLeft <= 0 || b.rewriteCooldown > 0 ? "disabled" : ""}>临时改写 (${b.rewriteUsesLeft})</button>
+          <button class="btn" data-battle-action="end-turn">结束回合 →</button>
+        </div>
+      </div>
+      <div class="battle-log">${b.log.slice(-9).map(l => `<div class="${l.type}">${esc(l.text)}</div>`).join("")}</div>
+    </div>`;
+}
+
+/* ---------- 结局渲染 ---------- */
+function renderEnding(){
+  const e = ENDINGS[state.ending.id];
+  if (!e) return "";
+  const collected = endingCollection();
+  const all = Object.keys(ENDINGS);
+  const total = 7;
+  const body = typeof e.body === "function" ? e.body(state.ending.meta || {}) : (e.body || "");
+  const days = state.day;
+  return `
+    <div class="ending-screen">
+      <div class="ending-card" style="--ending-color:${e.color}">
+        <div class="ending-kicker">${esc(e.sub)}</div>
+        <h1 class="ending-title">${esc(e.title)}</h1>
+        <div class="ending-sub">异质 / 可玩 Demo</div>
+        <div class="ending-body">${body}</div>
+        <div class="ending-summary">
+          <div><span>存活天数</span><b>${days} 日</b></div>
+          <div><span>剩余寿命</span><b>${cpText(state.player.lifespanCP)}</b></div>
+          <div><span>眷属</span><b>${state.familiars.length} / 3</b></div>
+          <div><span>线索</span><b>${clueCount()} 条</b></div>
+        </div>
+        <div class="ending-collection">
+          已收集结局 ${collected.length} / ${total}：${all.map(id => collected.includes(id) ? `<span class="got">${esc(ENDINGS[id].title)}</span>` : `<span class="muted">???</span>`).join(" · ")}
+        </div>
+        <div class="ending-actions">
+          <button class="btn primary" data-action="restart-game">重新开始</button>
+          <button class="btn ghost" data-action="help">查看规则</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ============================================================
+   13. 弹窗 / 交互
+   ============================================================ */
+function openModal(html, size = "", locked = false){
+  const root = $("#modal-backdrop");
+  modalLocked = locked;
+  root.classList.remove("hidden");
+  root.innerHTML = `<div class="modal ${size}">${html}</div>`;
+}
+function closeModal(){
+  const root = $("#modal-backdrop");
+  if (!root) return;
+  modalLocked = false;
+  root.classList.add("hidden");
+  root.innerHTML = "";
+}
+
+function openHelp(){
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">RULES · 账本说明</div><h2 class="modal-title">怎么玩</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <ol class="rule-list">
+        <li><b>1 CP = 1 天寿命。</b>最小单位 0.5 CP。所有代价、借款、战斗爆发都按 CP 结算。</li>
+        <li><b>代价天平：</b>每只眷属有满功率代价 S。支付 C：C &lt; 0.8S 拒绝/虚弱；0.8S–S 按比例衰减；S–1.3S 满功率；&gt; 1.3S 暴走或契约作废。比例作为常量写在代码顶部。</li>
+        <li><b>常驻代价</b>每个回合结束时扣除；<b>爆发代价</b>使用眷属卡时立刻扣除。</li>
+        <li><b>代价视界</b>在天赋丢失后会从精确 0.5 CP 切换为模糊区间。所有界面数值会同步变化。</li>
+        <li><b>拆代价：</b>在眷属账本中选一条条款拆成两条，只能拆一次，碎片不可再拆。拆开后可以停付其中一条，降低 C 与每日常驻。</li>
+        <li><b>临时改写：</b>战斗中把某只眷属的爆发代价暂时挪到另一只头上。每场 2 次，冷却 3 回合。代价不会消失，只会让接收方的 C 升高。</li>
+        <li><b>契约断裂：</b>猎契人夺走眷属后，你有 3 回合窗口。每回合累积反水值；满 100 眷属会反水并回归。杀死施术者也能救回。超时则永久消散 + 反噬。</li>
+        <li><b>每天 2 个行动点。</b>主线、支线、经营都会消耗 1 点。结束今天时结算常驻代价和银行渠道费。</li>
+        <li><b>空白契约：</b>只有你能感知和使用。其他人拿到它，只能看见一张白纸。</li>
+      </ol>
+      <p class="tiny muted" style="margin-top:12px">完整数值与事件都在同一 HTML 文件的脚本区。搜索 <span class="mono">CFG</span> 调参，搜索 <span class="mono">EVENTS</span> 增加剧情。</p>
+      <div class="modal-actions"><button class="btn ghost" data-modal-action="close">知道了</button></div>
+    </div>`;
+  openModal(body, "wide");
+}
+
+function openSplitHelp(){
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">BLANK CONTRACT · SPLIT</div><h2 class="modal-title">拆代价</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>只有你能用的契约操作。把一条代价拆成两条等额条款，精确到 0.5 CP。每条条款只能拆一次，拆出的碎片不可再拆。</p>
+      <p>拆开之后，可以在眷属账本里分别“停付”其中一条。这样会降低 C 和每日常驻，但也可能把眷属压到 0.8S 以下，让她虚弱甚至拒绝出战。</p>
+      <p class="small muted">当前记录：已拆 ${state.stats.splits} 次。${state.splitUsed ? "空白契约已留下使用痕迹。" : "你还没拆过任何东西。"}</p>
+      <div class="modal-actions">
+        <button class="btn ghost" data-modal-action="close">关闭</button>
+      </div>
+    </div>`;
+  openModal(body);
+}
+
+function openTemporaryHelp(){
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">BLANK CONTRACT · REWRITE</div><h2 class="modal-title">临时改写</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>战斗中打开“临时改写”，选择一只眷属作为来源，另一只作为接收方。接下来 ${CFG.REWRITE_DURATION} 回合，来源的爆发代价会记在接收方的 C 上，不扣你的寿命。</p>
+      <p>每场战斗最多 ${CFG.REWRITE_USES_PER_BATTLE} 次，冷却 ${CFG.REWRITE_COOLDOWN} 回合。战斗结束后自动回滚。接收方的 C/S 超过 ${CFG.HIGH_TOLERANCE} 会暴走，需要掷骰保命。</p>
+      <div class="modal-actions"><button class="btn ghost" data-modal-action="close">关闭</button></div>
+    </div>`;
+  openModal(body);
+}
+
+function openRestartConfirm(){
+  const body = `
+    <div class="modal-head">
+      <div><div class="modal-kicker">RESTART</div><h2 class="modal-title">确定重开？</h2></div>
+      <button class="modal-close" data-modal-action="close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>这一局的账本会作废。已收集的结局仍会保留。</p>
+      <div class="modal-actions">
+        <button class="btn ghost" data-modal-action="close">继续这一局</button>
+        <button class="btn danger" data-modal-action="restart-confirm">重开</button>
+      </div>
+    </div>`;
+  openModal(body);
+}
+
+/* ============================================================
+   14. 事件委托
+   ============================================================ */
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest("button, [data-action]");
+  if (!t) return;
+
+  // 模态框按钮
+  const modalAction = t.getAttribute("data-modal-action");
+  if (modalAction){
+    ev.preventDefault();
+    switch (modalAction){
+      case "close": closeModal(); break;
+      case "sign-one": break; // 由直接监听处理
+      case "split-clause": splitClause(t.dataset.fid, Number(t.dataset.index)); break;
+      case "toggle-clause": toggleClause(t.dataset.fid, Number(t.dataset.index)); break;
+      case "cash-asset": cashAsset(t.dataset.id); break;
+      case "repay-confirm": repayBank(); break;
+      case "rewrite-confirm": confirmRewrite(t.dataset.source, t.dataset.target); break;
+      case "restart-confirm": restartGame(); break;
+      default: break;
+    }
+    return;
+  }
+
+  const action = t.getAttribute("data-action");
+  if (action){
+    ev.preventDefault();
+    switch (action){
+      case "help": openHelp(); break;
+      case "restart": openRestartConfirm(); break;
+      case "assets": openAssets(); break;
+      case "repay": openRepay(); break;
+      case "split-help": openSplitHelp(); break;
+      case "temporary-help": openTemporaryHelp(); break;
+      case "ledger": openLedger(t.dataset.fid); break;
+      case "continue": continueAfterOutcome(); break;
+      case "end-day": endDay(); break;
+      case "restart-game": openRestartConfirm(); break;
+      default: break;
+    }
+    return;
+  }
+
+  const eventId = t.getAttribute("data-event");
+  if (eventId){
+    ev.preventDefault();
+    openEvent(eventId);
+    return;
+  }
+
+  const optIndex = t.getAttribute("data-opt");
+  if (optIndex != null && state && state.currentEvent){
+    ev.preventDefault();
+    const evId = state.currentEvent;
+    const eventDef = EVENTS[evId] || SIDE_EVENTS[evId];
+    if (!eventDef) return;
+    const opts = typeof eventDef.options === "function" ? eventDef.options() : (eventDef.options || []);
+    const opt = opts[Number(optIndex)];
+    if (!opt) return;
+    if (opt.condition && !opt.condition()) return;
+    opt.run();
+    return;
+  }
+
+  const cardIndex = t.getAttribute("data-card");
+  if (cardIndex != null && state && state.battle){
+    ev.preventDefault();
+    playCard(Number(cardIndex));
+    return;
+  }
+
+  const battleAction = t.getAttribute("data-battle-action");
+  if (battleAction){
+    ev.preventDefault();
+    if (battleAction === "rewrite") openRewrite();
+    if (battleAction === "end-turn") endTurn();
+    return;
+  }
+});
+
+$("#modal-backdrop").addEventListener("click", (ev) => {
+  if (ev.target.id === "modal-backdrop" && !modalLocked) closeModal();
+});
+
+/* ============================================================
+   15. 启动
+   ============================================================ */
+function startGame(){
+  const input = $("#player-name");
+  const name = (input && input.value.trim()) || "无名氏";
+  state = newState(name);
+  addLog(`第 1 日。你在旧港区继承了一张空白契约。`, "story");
+  document.getElementById("start-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+  renderAll();
+  openEvent("m01", { free:true, force:true });
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+function restartGame(){
+  closeModal();
+  clearToasts();
+  state = null;
+  $("#game-screen").classList.add("hidden");
+  $("#start-screen").classList.remove("hidden");
+  refreshStartEndings();
+  const input = $("#player-name");
+  if (input) input.value = "沈账";
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+function refreshStartEndings(){
+  const el = $("#start-endings");
+  if (!el) return;
+  el.textContent = `已收集结局 ${endingCollection().length} / 7`;
+}
+
+document.getElementById("start-btn").addEventListener("click", startGame);
+document.getElementById("player-name").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") startGame();
+});
+
+refreshStartEndings();
+
+/* 调试接口：使用时可在控制台查看状态 / 快速跳转。
+   不影响正常游玩；发布时可删除。 */
+window.__YIZHI__ = {
+  getState: () => state,
+  CFG,
+  EVENTS,
+  SIDE_EVENTS,
+  BATTLES,
+  openEvent,
+  startBattle,
+  endGame,
+  renderAll,
+  signOne: finalizeSignOne,
+  signThree: finalizeSignThree,
+  splitClause,
+  startGame
+};
+</script>
+</body>
+</html>
